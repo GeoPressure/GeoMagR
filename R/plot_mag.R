@@ -62,7 +62,12 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
 
   if (type == "magnetic") {
     p <- plotly::plot_ly() |>
-      add_3d_scatter(tag$magnetic, "magnetic_x", "magnetic_y", "magnetic_z", "stap_id", cols)
+      add_3d_scatter(tag$magnetic, "magnetic_x", "magnetic_y", "magnetic_z", "stap_id", cols) |>
+      plotly::layout(
+        scene = list(
+          aspectmode = "data"
+        )
+      )
   } else if (type == "calib") {
     if (!"I" %in% names(tag$magnetic)) {
       cli::cli_abort(c(
@@ -87,7 +92,12 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
 
 
     p <- plotly::plot_ly() |>
-      add_3d_scatter(tag$mag_calib, "magnetic_x", "magnetic_y", "magnetic_z", "stap_id", cols)
+      add_3d_scatter(tag$mag_calib, "magnetic_x", "magnetic_y", "magnetic_z", "stap_id", cols) |>
+      plotly::layout(
+        scene = list(
+          aspectmode = "data"
+        )
+      )
 
     for (i_stap in stap_id) {
       radius <- tag$param$geomag_calib$radius_shape *
@@ -139,6 +149,7 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
       plotly::layout(
         title = axis_titles$title,
         scene = list(
+          aspectmode = "data",
           xaxis = list(title = axis_titles$x),
           yaxis = list(title = axis_titles$y),
           zaxis = list(title = axis_titles$z)
