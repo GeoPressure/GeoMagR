@@ -43,7 +43,9 @@
 #'   - `magnetic_xc`, `magnetic_yc`, `magnetic_zc`: Calibrated magnetic data
 #'   - `magnetic_xcp`, `magnetic_ycp`, `magnetic_zcp`: Calibrated magnetic data projected in NED
 #'   frame
-#'   - `H`: Heading (radian, North=0)
+#'   - `H`: Magnetic heading / yaw (radian). Computed as `atan2(-magnetic_ycp, magnetic_xcp)` after
+#'     tilt compensation. 0 = North, +pi/2 = East, pi = South, -pi/2 = West. Range (-pi, pi]; use
+#'     `(H + 2*pi) %% (2*pi)` for [0, 2*pi) representation.
 #'   - `F`: Magnetic field intensity (Gauss)
 #'   - `I`: Inclination (radian)
 #' Also returns (invisibly) the calibration dataset used (`tag$mag_calib`) and calibration
@@ -165,10 +167,12 @@ geomag_calib <- function(tag,
   mag$magnetic_ycp <- mr[, 2]
   mag$magnetic_zcp <- mr[, 3]
 
-  # Step 7: Compute heading (H), intensity (F), and inclination (I)
-  mag$H <- atan2(-mag$magnetic_ycp, mag$magnetic_xcp)
+  # Step 7: Compute intensity (F), and inclination (I)
   mag$F <- sqrt(rowSums(mr^2))
   mag$I <- -asin(mag$magnetic_zcp / mag$F)
+  # Compute heading (H). For some reason, we need to offset by pi/2 to get correct values
+  # then convert to degree and make sure it's in [0,360)
+  mag$H <- ((atan2(mag$magnetic_xcp, mag$magnetic_ycp) + pi / 2) * 180 / pi + 360) %% 360
 
   # Store calibration metadata and used calibration data
   tag$param$geomag_calib <- attr(mag, "geomag_calib")
