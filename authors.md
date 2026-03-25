@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/Rafnuss/GeoMag/blob/v0.1/inst/CITATION)
+[`inst/CITATION`](https://github.com/Rafnuss/GeoMag/blob/main/inst/CITATION)
 
 Nussbaumer R (2025). *GeoMag: Geolocation by Magnetic Field*. R package
 version 0.1.0, <https://github.com/Rafnuss/GeoMag>.
