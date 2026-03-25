@@ -5,8 +5,8 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/Rafnuss/GeoMag/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Rafnuss/GeoMag/actions/workflows/R-CMD-check.yaml)
-[![lint](https://github.com/Rafnuss/GeoMag/actions/workflows/lint.yaml/badge.svg)](https://github.com/Rafnuss/GeoMag/actions/workflows/lint.yaml)
+[![R-CMD-check](https://github.com/GeoPressure/GeoMag/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/GeoPressure/GeoMag/actions/workflows/R-CMD-check.yaml)
+[![lint](https://github.com/GeoPressure/GeoMag/actions/workflows/lint.yaml/badge.svg)](https://github.com/GeoPressure/GeoMag/actions/workflows/lint.yaml)
 [![Lifecycle:
 stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 <!-- badges: end -->
@@ -23,7 +23,7 @@ triaxis magnetic field measurements, including:
   ellipsoid fits, and 3D scatterplots.
 
 GeoMag is designed to work seamlessly with
-[GeoPressureR](https://raphaelnussbaumer.com/GeoPressureR), enabling
+[GeoPressureR](https://geopressure.org/GeoPressureR), enabling
 high-resolution migratory track reconstruction using multi-sensor
 archival tags.
 
@@ -35,7 +35,7 @@ To install the latest version from GitHub:
 
 ``` r
 # install.packages("pak")
-pak::pkg_install("Rafnuss/GeoMag")
+pak::pkg_install("GeoPressure/GeoMag")
 ```
 
 ------------------------------------------------------------------------
@@ -75,7 +75,7 @@ plot(tag, "map_magnetic")
 If you use GeoMag in your research, please cite:
 
 > Nussbaumer, R. (2025). GeoMag: Magnetic Field-Based Geolocation in R.
-> <https://github.com/Rafnuss/GeoMag>
+> <https://github.com/GeoPressure/GeoMag>
 
 For citation information in R:
 

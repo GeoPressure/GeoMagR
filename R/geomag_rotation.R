@@ -9,7 +9,6 @@
 #' @param yaw Yaw angle (radian), ignored if x is a vector.
 #'
 #' @return 3x3 rotation matrix.
-#' @seealso [geomag_calib_rotate()]
 #' @examples
 #' rot(0.1, 0.2, 0.3)
 #' rot(c(0.1, 0.2, 0.3))
@@ -24,13 +23,28 @@ rot <- function(x, pitch, yaw) {
   }
   cc <- cos(roll)
   ss <- sin(roll)
-  rx <- matrix(c(1, 0, 0, 0, cc, ss, 0, -ss, cc), nrow = 3, ncol = 3, byrow = FALSE)
+  rx <- matrix(
+    c(1, 0, 0, 0, cc, ss, 0, -ss, cc),
+    nrow = 3,
+    ncol = 3,
+    byrow = FALSE
+  )
   cc <- cos(pitch)
   ss <- sin(pitch)
-  ry <- matrix(c(cc, 0, -ss, 0, 1, 0, ss, 0, cc), nrow = 3, ncol = 3, byrow = FALSE)
+  ry <- matrix(
+    c(cc, 0, -ss, 0, 1, 0, ss, 0, cc),
+    nrow = 3,
+    ncol = 3,
+    byrow = FALSE
+  )
   cc <- cos(yaw)
   ss <- sin(yaw)
-  rz <- matrix(c(cc, 0, ss, 0, 1, 0, -ss, 0, cc), nrow = 3, ncol = 3, byrow = FALSE)
+  rz <- matrix(
+    c(cc, 0, ss, 0, 1, 0, -ss, 0, cc),
+    nrow = 3,
+    ncol = 3,
+    byrow = FALSE
+  )
   rz %*% ry %*% rx
 }
 
@@ -53,9 +67,15 @@ rot_align <- function(rotM, radius_shape) {
     radius_shape[cm] <- radius_shape[rm]
     radius_shape[rm] <- t
   }
-  if (rm == 1) k <- c(2, 3)
-  if (rm == 2) k <- c(1, 3)
-  if (rm == 3) k <- c(1, 2)
+  if (rm == 1) {
+    k <- c(2, 3)
+  }
+  if (rm == 2) {
+    k <- c(1, 3)
+  }
+  if (rm == 3) {
+    k <- c(1, 2)
+  }
   rm <- 0
   cm <- 0
   m <- 0
@@ -78,9 +98,15 @@ rot_align <- function(rotM, radius_shape) {
     radius_shape[cm] <- radius_shape[rm]
     radius_shape[rm] <- t
   }
-  if (rotM[1, 1] < 0) rotM[, 1] <- -rotM[, 1]
-  if (rotM[2, 2] < 0) rotM[, 2] <- -rotM[, 2]
-  if (rotM[3, 3] < 0) rotM[, 3] <- -rotM[, 3]
+  if (rotM[1, 1] < 0) {
+    rotM[, 1] <- -rotM[, 1]
+  }
+  if (rotM[2, 2] < 0) {
+    rotM[, 2] <- -rotM[, 2]
+  }
+  if (rotM[3, 3] < 0) {
+    rotM[, 3] <- -rotM[, 3]
+  }
   list(rotM = rotM, radius_shape = radius_shape)
 }
 
@@ -115,10 +141,12 @@ is_outlier_3d <- function(x, thresh = 3) {
 #' @param thresh Numeric, MAD threshold for outlier removal (default 3).
 #' @return Tag object with updated `magnetic$is_static` logical column.
 #' @noRd
-is_static <- function(tag,
-                      thresh_hard = .1, # g
-                      thresh_act = 10,
-                      thresh = 3) {
+is_static <- function(
+  tag,
+  thresh_hard = 0.1, # g
+  thresh_act = 10,
+  thresh = 3
+) {
   if (is.null(tag$magnetic)) {
     cli::cli_abort("No magnetic data found in the tag object.")
   }

@@ -67,11 +67,13 @@
 #'   head(tag$magnetic)
 #' })
 #' @export
-geomag_calib <- function(tag,
-                         calib_data = NULL,
-                         calib_method = NULL,
-                         rm_outlier = TRUE,
-                         quiet = FALSE) {
+geomag_calib <- function(
+  tag,
+  calib_data = NULL,
+  calib_method = NULL,
+  rm_outlier = TRUE,
+  quiet = FALSE
+) {
   GeoPressureR::tag_assert(tag, "magnetic")
 
   # Step 1: Mark static/movement states using acceleration
@@ -95,8 +97,11 @@ geomag_calib <- function(tag,
 
   # Load calibration data if requested/available
   if (identical(calib_data, TRUE)) {
-    tag_calib <- GeoPressureR:::tag_create_soi("",
-      directory = directory, quiet = quiet
+    tag_calib <- GeoPressureR::tag_create(
+      "",
+      manufacturer = "soi",
+      directory = directory,
+      quiet = quiet
     )
     assertthat::assert_that(
       !is.null(tag_calib$magnetic),
@@ -147,9 +152,11 @@ geomag_calib <- function(tag,
   gr <- geomag_calib_rotate(
     matrix(
       c(mag$acceleration_x, mag$acceleration_y, mag$acceleration_z),
-      nrow(mag), 3
+      nrow(mag),
+      3
     ),
-    roll = mag$roll, pitch = mag$pitch
+    roll = mag$roll,
+    pitch = mag$pitch
   )
   mag$acceleration_xp <- gr[, 1]
   mag$acceleration_yp <- gr[, 2]
@@ -159,9 +166,11 @@ geomag_calib <- function(tag,
   mr <- geomag_calib_rotate(
     matrix(
       c(mag$magnetic_xc, mag$magnetic_yc, mag$magnetic_zc),
-      nrow(mag), 3
+      nrow(mag),
+      3
     ),
-    roll = mag$roll, pitch = mag$pitch
+    roll = mag$roll,
+    pitch = mag$pitch
   )
   mag$magnetic_xcp <- mr[, 1]
   mag$magnetic_ycp <- mr[, 2]
@@ -172,11 +181,19 @@ geomag_calib <- function(tag,
   mag$I <- -asin(mag$magnetic_zcp / mag$F)
   # Compute heading (H). For some reason, we need to offset by pi/2 to get correct values
   # then convert to degree and make sure it's in [0,360)
-  mag$H <- ((atan2(mag$magnetic_xcp, mag$magnetic_ycp) + pi / 2) * 180 / pi + 360) %% 360
+  mag$H <- ((atan2(mag$magnetic_xcp, mag$magnetic_ycp) + pi / 2) *
+    180 /
+    pi +
+    360) %%
+    360
 
   # Store calibration metadata and used calibration data
   tag$param$geomag_calib <- attr(mag, "geomag_calib")
-  tag$param$geomag_calib$calib_data <- ifelse(identical(calib_data, TRUE), directory, FALSE)
+  tag$param$geomag_calib$calib_data <- ifelse(
+    identical(calib_data, TRUE),
+    directory,
+    FALSE
+  )
   tag$param$geomag_calib$rm_outlier <- rm_outlier
   attr(mag, "geomag_calib") <- NULL
 
@@ -191,8 +208,9 @@ geomag_calib <- function(tag,
 #' @noRd
 geomag_calib_rm <- function(mag_calib, tag) {
   # Remove values with excessive magnetic field intensity
-  mn <- sqrt(mag_calib$magnetic_x^2 + mag_calib$magnetic_y^2 +
-    mag_calib$magnetic_z^2)
+  mn <- sqrt(
+    mag_calib$magnetic_x^2 + mag_calib$magnetic_y^2 + mag_calib$magnetic_z^2
+  )
   mag_calib <- mag_calib[mn < 1, ]
   if (nrow(mag_calib) == 0) {
     cli::cli_abort(c(
@@ -212,16 +230,20 @@ geomag_calib_rm <- function(mag_calib, tag) {
   offset <- attr(mag_tmp, "geomag_calib")$offset
 
   # Remove values with physically implausible field strengths
-  mn <- sqrt((mag_calib$magnetic_x - offset[1])^2 +
-    (mag_calib$magnetic_y - offset[2])^2 +
-    (mag_calib$magnetic_z - offset[3])^2)
+  mn <- sqrt(
+    (mag_calib$magnetic_x - offset[1])^2 +
+      (mag_calib$magnetic_y - offset[2])^2 +
+      (mag_calib$magnetic_z - offset[3])^2
+  )
   mag_calib <- mag_calib[mn > 0.25, ]
   mag_calib <- mag_calib[mn < 0.65, ]
 
   # Outlier detection within stap groups if available
-  mn <- sqrt((mag_calib$magnetic_x - offset[1])^2 +
-    (mag_calib$magnetic_y - offset[2])^2 +
-    (mag_calib$magnetic_z - offset[3])^2)
+  mn <- sqrt(
+    (mag_calib$magnetic_x - offset[1])^2 +
+      (mag_calib$magnetic_y - offset[2])^2 +
+      (mag_calib$magnetic_z - offset[3])^2
+  )
   if ("stap_id" %in% names(mag_calib)) {
     G <- round(mag_calib$stap_id)
     split_df <- split(mn, G)

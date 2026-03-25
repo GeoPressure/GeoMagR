@@ -5,7 +5,7 @@
 #' (intensity and inclination) compared to the expected values from the World Magnetic Model (WMM).
 #'
 #' @param tag A [GeoPressureR tag object
-#'  ](https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html).
+#'  ](https://geopressure.org/GeoPressureR/reference/tag_create.html).
 #' @param compute_known Logical. If TRUE, computes likelihood maps for known stationary periods;
 #'   if FALSE, fixes the likelihood at the known location.
 #' @param sd_e_f Numeric. Standard deviation of observation noise of intensity error (single value
@@ -22,7 +22,7 @@
 #' @param quiet Logical. If TRUE, suppresses progress messages.
 #'
 #' @return A [GeoPressureR tag object
-#' ](https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html) with likelihood maps
+#' ](https://geopressure.org/GeoPressureR/reference/tag_create.html) with likelihood maps
 #' added as:
 #'   - `tag$map_magnetic_intensity`
 #'   - `tag$map_magnetic_inclination`
@@ -49,15 +49,17 @@
 #'   plot(tag, type = "map_magnetic_inclination")
 #' })
 #' @export
-geomag_map <- function(tag,
-                       compute_known = FALSE,
-                       sd_e_f = 0.009,
-                       sd_e_i = 2.6,
-                       sd_m_f = 0.014,
-                       sd_m_i = 3.5,
-                       ref_map = geomag_map_ref(tag),
-                       quiet = FALSE) {
-  GeoPressureR:::tag_assert(tag, "setmap")
+geomag_map <- function(
+  tag,
+  compute_known = FALSE,
+  sd_e_f = 0.009,
+  sd_e_i = 2.6,
+  sd_m_f = 0.014,
+  sd_m_i = 3.5,
+  ref_map = geomag_map_ref(tag),
+  quiet = FALSE
+) {
+  GeoPressureR::tag_assert(tag, "setmap")
   assertthat::assert_that(is.logical(compute_known))
   if (!inherits(ref_map, "SpatRaster")) {
     cli::cli_abort(c(
@@ -65,7 +67,10 @@ geomag_map <- function(tag,
       {.var intensity}, and {.var inclinaison}."
     ))
   }
-  g <- GeoPressureR:::map_expand(tag$param$tag_set_map$extent, tag$param$tag_set_map$scale)
+  g <- GeoPressureR::map_expand(
+    tag$param$tag_set_map$extent,
+    tag$param$tag_set_map$scale
+  )
   # Check ref_map is coheren with dimension of g
   if (!all(dim(ref_map)[c(1, 2)] == c(g$dim[1], g$dim[2]))) {
     cli::cli_abort(c(
@@ -124,12 +129,14 @@ geomag_map <- function(tag,
     map_mag_f[[istap]] <- likelihood(
       mag_istap$F,
       as.matrix(ref_map$intensity, wide = TRUE),
-      sd_m_f[istap], sd_e_f[istap]
+      sd_m_f[istap],
+      sd_e_f[istap]
     )
     map_mag_i[[istap]] <- likelihood(
       mag_istap$I * 180 / pi,
       as.matrix(ref_map$inclinaison, wide = TRUE),
-      sd_m_i[istap], sd_e_i[istap]
+      sd_m_i[istap],
+      sd_e_i[istap]
     )
     map_mag[[istap]] <- map_mag_f[[istap]] * map_mag_i[[istap]]
   }
@@ -151,28 +158,28 @@ geomag_map <- function(tag,
   }
 
   tag$map_magnetic_intensity <- GeoPressureR::map_create(
-    data   = map_mag_f,
+    data = map_mag_f,
     extent = tag$param$tag_set_map$extent,
-    scale  = tag$param$tag_set_map$scale,
-    stap   = tag$stap,
-    id     = tag$param$id,
-    type   = "magnetic_intensity"
+    scale = tag$param$tag_set_map$scale,
+    stap = tag$stap,
+    id = tag$param$id,
+    type = "magnetic_intensity"
   )
   tag$map_magnetic_inclination <- GeoPressureR::map_create(
-    data   = map_mag_i,
+    data = map_mag_i,
     extent = tag$param$tag_set_map$extent,
-    scale  = tag$param$tag_set_map$scale,
-    stap   = tag$stap,
-    id     = tag$param$id,
-    type   = "magnetic_inclination"
+    scale = tag$param$tag_set_map$scale,
+    stap = tag$stap,
+    id = tag$param$id,
+    type = "magnetic_inclination"
   )
   tag$map_magnetic <- GeoPressureR::map_create(
-    data   = map_mag,
+    data = map_mag,
     extent = tag$param$tag_set_map$extent,
-    scale  = tag$param$tag_set_map$scale,
-    stap   = tag$stap,
-    id     = tag$param$id,
-    type   = "magnetic"
+    scale = tag$param$tag_set_map$scale,
+    stap = tag$stap,
+    id = tag$param$id,
+    type = "magnetic"
   )
 
   tag$param$geomag_map$sd_e_f <- sd_e_f
@@ -193,24 +200,39 @@ geomag_map <- function(tag,
 #' @return A list of two terra raster layers: `intensity` (Gauss) and `inclinaison` (degrees).
 #' @noRd
 geomag_map_ref <- function(tag, quiet = FALSE) {
-  height <- -(288.15 / -0.0065) * (1 - ((stats::median(tag$pressure$value) / 1013.25)^(1 / 5.2561)))
+  height <- -(288.15 / -0.0065) *
+    (1 - ((stats::median(tag$pressure$value) / 1013.25)^(1 / 5.2561)))
   time <- stats::median(tag$magnetic$date)
-  g <- GeoPressureR:::map_expand(tag$param$tag_set_map$extent, tag$param$tag_set_map$scale)
+  g <- GeoPressureR::map_expand(
+    tag$param$tag_set_map$extent,
+    tag$param$tag_set_map$scale
+  )
   m <- expand.grid(lat = g$lat, lon = g$lon)
 
   if (!quiet) {
-    pb <- cli::cli_progress_bar("Calculating Magnetic Field map", total = nrow(m))
-    map_mag <- mapply(\(loni, lati) {
-      tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
-      cli::cli_progress_update(id = pb)
-      c(tmp$f, tmp$i)
-    }, m$lon, m$lat)
+    pb <- cli::cli_progress_bar(
+      "Calculating Magnetic Field map",
+      total = nrow(m)
+    )
+    map_mag <- mapply(
+      \(loni, lati) {
+        tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
+        cli::cli_progress_update(id = pb)
+        c(tmp$f, tmp$i)
+      },
+      m$lon,
+      m$lat
+    )
     cli::cli_progress_done(id = pb)
   } else {
-    map_mag <- mapply(\(loni, lati) {
-      tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
-      c(tmp$f, tmp$i)
-    }, m$lon, m$lat)
+    map_mag <- mapply(
+      \(loni, lati) {
+        tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
+        c(tmp$f, tmp$i)
+      },
+      m$lon,
+      m$lat
+    )
   }
 
   map_f <- terra::rast(
@@ -244,9 +266,9 @@ geomag_map_ref <- function(tag, quiet = FALSE) {
 geomag_clean <- function(tag) {
   mag <- tag$magnetic
   if (!("stap_id" %in% names(mag))) {
-    mag$stap_id <- GeoPressureR:::find_stap(tag$stap, mag$date)
+    mag$stap_id <- GeoPressureR::find_stap(tag$stap, mag$date)
   }
-  mag <- mag[mag$F > .25 & mag$F < .65, ]
+  mag <- mag[mag$F > 0.25 & mag$F < 0.65, ]
   G <- round(mag$stap_id)
   outlier_F <- unsplit(lapply(split(mag$F, G), is_outlier), G)
   outlier_I <- unsplit(lapply(split(mag$I, G), is_outlier), G)

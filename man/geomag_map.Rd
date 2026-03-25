@@ -7,16 +7,16 @@
 geomag_map(
   tag,
   compute_known = FALSE,
-  sd_e_f = 0.007,
-  sd_e_i = 5,
-  sd_m_f = 0.01,
-  sd_m_i = 3.2,
+  sd_e_f = 0.009,
+  sd_e_i = 2.6,
+  sd_m_f = 0.014,
+  sd_m_i = 3.5,
   ref_map = geomag_map_ref(tag),
   quiet = FALSE
 )
 }
 \arguments{
-\item{tag}{A \href{https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object }.}
+\item{tag}{A \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object }.}
 
 \item{compute_known}{Logical. If TRUE, computes likelihood maps for known stationary periods;
 if FALSE, fixes the likelihood at the known location.}
@@ -40,7 +40,7 @@ computational time.}
 \item{quiet}{Logical. If TRUE, suppresses progress messages.}
 }
 \value{
-A \href{https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } with likelihood maps
+A \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } with likelihood maps
 added as:
 \itemize{
 \item \code{tag$map_magnetic_intensity}

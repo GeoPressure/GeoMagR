@@ -1,11 +1,11 @@
-url: https://raphaelnussbaumer.com/GeoMag/
+url: https://geopressure.org/GeoMag/
 template:
   bootstrap: 5
   bslib:
     bootswatch: pulse
 reference:
-- title: GeoMag
-  contents:
-  - geomag_calib
-  - geomag_map
-  - plot_mag
+  - title: GeoMag
+    contents:
+      - geomag_calib
+      - geomag_map
+      - plot_mag

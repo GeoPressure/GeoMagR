@@ -7,7 +7,7 @@
 plot_mag(tag, type = "magnetic", stap_id = NULL, path = NULL)
 }
 \arguments{
-\item{tag}{A \href{https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } containing magnetic (and
+\item{tag}{A \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } containing magnetic (and
 optionally calibration) data.}
 
 \item{type}{Character, plot type. One of "magnetic", "calib", "acceleration", "acceleration_p",
@@ -24,7 +24,7 @@ A plotly \code{plot_ly} object (interactive 3D/2D plot) or a ggplotly object for
 series/histogram types.
 }
 \description{
-Provides interactive 3D and 2D plots for exploring \href{https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } sensor data, including
+Provides interactive 3D and 2D plots for exploring \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } sensor data, including
 raw and calibrated magnetic data, fitted calibration ellipsoids, and (projected) acceleration
 data. Color-coding by stationary period or movement state is supported. Also supports time
 series and histogram error plots against reference paths.

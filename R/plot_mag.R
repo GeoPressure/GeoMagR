@@ -4,7 +4,7 @@ utils::globalVariables(c(".data"))
 #'
 #' @description
 #' Provides interactive 3D and 2D plots for exploring [GeoPressureR tag object
-#' ](https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html) sensor data, including
+#' ](https://geopressure.org/GeoPressureR/reference/tag_create.html) sensor data, including
 #' raw and calibrated magnetic data, fitted calibration ellipsoids, and (projected) acceleration
 #' data. Color-coding by stationary period or movement state is supported. Also supports time
 #' series and histogram error plots against reference paths.
@@ -22,7 +22,7 @@ utils::globalVariables(c(".data"))
 #' }
 #'
 #' @param tag A [GeoPressureR tag object
-#' ](https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html) containing magnetic (and
+#' ](https://geopressure.org/GeoPressureR/reference/tag_create.html) containing magnetic (and
 #'  optionally calibration) data.
 #' @param type Character, plot type. One of "magnetic", "calib", "acceleration", "acceleration_p",
 #'  "timeseries", or "histogram".
@@ -62,7 +62,14 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
 
   if (type == "magnetic") {
     p <- plotly::plot_ly() |>
-      add_3d_scatter(tag$magnetic, "magnetic_x", "magnetic_y", "magnetic_z", "stap_id", cols) |>
+      add_3d_scatter(
+        tag$magnetic,
+        "magnetic_x",
+        "magnetic_y",
+        "magnetic_z",
+        "stap_id",
+        cols
+      ) |>
       plotly::layout(
         scene = list(
           aspectmode = "data"
@@ -88,11 +95,19 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
         which.max(tag$param$geomag_calib$radius_amplitude[poss_stap])
       )]
     }
-    stap_id[stap_id < 0] <- max(tag$mag_calib$stap_id) - 1 - stap_id[stap_id < 0]
-
+    stap_id[stap_id < 0] <- max(tag$mag_calib$stap_id) -
+      1 -
+      stap_id[stap_id < 0]
 
     p <- plotly::plot_ly() |>
-      add_3d_scatter(tag$mag_calib, "magnetic_x", "magnetic_y", "magnetic_z", "stap_id", cols) |>
+      add_3d_scatter(
+        tag$mag_calib,
+        "magnetic_x",
+        "magnetic_y",
+        "magnetic_z",
+        "stap_id",
+        cols
+      ) |>
       plotly::layout(
         scene = list(
           aspectmode = "data"
@@ -115,13 +130,16 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
       tag <- is_static(tag)
     }
     tag$magnetic$is_static_label <- factor(
-      ifelse(tag$magnetic$is_static, "Static", "Moving"), c("Moving", "Static")
+      ifelse(tag$magnetic$is_static, "Static", "Moving"),
+      c("Moving", "Static")
     )
     if (type == "acceleration") {
       cols_acc <- c("acceleration_x", "acceleration_y", "acceleration_z")
       axis_titles <- list(
         title = "Raw Acceleration (sensor frame)",
-        x = "X (forward)", y = "Y (right)", z = "Z (down)"
+        x = "X (forward)",
+        y = "Y (right)",
+        z = "Z (down)"
       )
     } else {
       if (!"acceleration_xp" %in% names(tag$magnetic)) {
@@ -133,7 +151,9 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
       cols_acc <- c("acceleration_xp", "acceleration_yp", "acceleration_zp")
       axis_titles <- list(
         title = "Projected Acceleration (Horizontal plane of Earth)",
-        x = "X_p (forward)", y = "Y_p (right)", z = "Z_p (down)"
+        x = "X_p (forward)",
+        y = "Y_p (right)",
+        z = "Z_p (down)"
       )
     }
     p <- plotly::plot_ly() |>
@@ -158,13 +178,16 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
 
     if (type == "acceleration_p") {
       # Plot the center
-      p <- p |> plotly::add_trace(
-        x = c(0, 0), y = c(0, 0), z = c(0, 1),
-        type = "scatter3d",
-        mode = "lines",
-        line = list(color = "red", width = 4),
-        name = "Reference gravity field"
-      )
+      p <- p |>
+        plotly::add_trace(
+          x = c(0, 0),
+          y = c(0, 0),
+          z = c(0, 1),
+          type = "scatter3d",
+          mode = "lines",
+          line = list(color = "red", width = 4),
+          name = "Reference gravity field"
+        )
     }
   } else if (type == "timeseries" || type == "histogram") {
     if (!"I" %in% names(tag$magnetic)) {
@@ -178,7 +201,11 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
       dplyr::filter(stap_id == round(stap_id)) |>
       dplyr::mutate(stap_id = factor(stap_id)) |>
       dplyr::mutate(I = .data$I * 180 / pi) |>
-      tidyr::pivot_longer(cols = c(.data$I, .data$F), names_to = "variable", values_to = "value") |>
+      tidyr::pivot_longer(
+        cols = c("I", "F"),
+        names_to = "variable",
+        values_to = "value"
+      ) |>
       dplyr::select("date", "stap_id", "variable", "value")
 
     segments <- mag |>
@@ -202,7 +229,11 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
       ))
       path_long <- path |>
         dplyr::select("start", "end", "stap_id", "F", "I") |>
-        tidyr::pivot_longer(cols = c(.data$F, .data$I), names_to = "variable", values_to = "val") |>
+        tidyr::pivot_longer(
+          cols = c("I", "F"),
+          names_to = "variable",
+          values_to = "val"
+        ) |>
         dplyr::mutate(stap_id = factor(.data$stap_id))
     }
 
@@ -212,7 +243,10 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
         ggplot2::geom_segment(
           data = segments,
           ggplot2::aes(
-            x = .data$start, xend = .data$end, y = .data$mean_val, yend = .data$mean_val,
+            x = .data$start,
+            xend = .data$end,
+            y = .data$mean_val,
+            yend = .data$mean_val,
             color = .data$stap_id
           ),
           linewidth = 1.2,
@@ -223,7 +257,12 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
         p <- p +
           ggplot2::geom_segment(
             data = path_long,
-            ggplot2::aes(x = .data$start, xend = .data$end, y = .data$val, yend = .data$val),
+            ggplot2::aes(
+              x = .data$start,
+              xend = .data$end,
+              y = .data$val,
+              yend = .data$val
+            ),
             color = "red",
             linewidth = 1.2,
             show.legend = FALSE
@@ -236,10 +275,12 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
           ~variable,
           ncol = 1,
           scales = "free_y",
-          labeller = ggplot2::labeller(variable = c(
-            I = "Inclinaison (\u00B0)",
-            F = "Intensity (nT)"
-          ))
+          labeller = ggplot2::labeller(
+            variable = c(
+              I = "Inclinaison (\u00B0)",
+              F = "Intensity (nT)"
+            )
+          )
         ) +
         ggplot2::theme_minimal()
 
@@ -278,10 +319,13 @@ plot_mag <- function(tag, type = "magnetic", stap_id = NULL, path = NULL) {
         ggplot2::geom_text(
           data = sds,
           ggplot2::aes(
-            x = Inf, y = Inf,
-            label = paste0("SD=", round(sd, 4))
+            x = Inf,
+            y = Inf,
+            label = paste0("SD=", round(.data$sd, 4))
           ),
-          hjust = 1.1, vjust = 1.5, inherit.aes = FALSE
+          hjust = 1.1,
+          vjust = 1.5,
+          inherit.aes = FALSE
         ) +
         ggplot2::labs(x = "Error obs - WMM", y = NULL)
     }
@@ -300,7 +344,12 @@ get_stap_palette <- function(n) {
 }
 
 # Add ellipsoid mesh overlay to a plotly object
-add_ellipsoid_mesh <- function(p, radius = c(1, 1, 1), offset = c(0, 0, 0), color = "lightblue") {
+add_ellipsoid_mesh <- function(
+  p,
+  radius = c(1, 1, 1),
+  offset = c(0, 0, 0),
+  color = "lightblue"
+) {
   # Mesh grid for ellipsoid overlays
   phi <- seq(0, 360, length.out = 100) / 180 * pi
   theta <- seq(-90, 90, length.out = 100) / 180 * pi
@@ -309,33 +358,35 @@ add_ellipsoid_mesh <- function(p, radius = c(1, 1, 1), offset = c(0, 0, 0), colo
   z <- c(cos(phi) %*% t(rep(1, length(theta))))
 
   suppressWarnings(
-    p |> plotly::add_mesh(
-      x = x * radius[1] + offset[1],
-      y = y * radius[2] + offset[2],
-      z = z * radius[3] + offset[3],
-      alphahull = 0,
-      opacity = 0.2,
-      showscale = FALSE,
-      intensity = rep(1, length(x)),
-      colorscale = list(c(0, 1), c(color, color)),
-      color = I(color),
-      showlegend = FALSE
-    )
+    p |>
+      plotly::add_mesh(
+        x = x * radius[1] + offset[1],
+        y = y * radius[2] + offset[2],
+        z = z * radius[3] + offset[3],
+        alphahull = 0,
+        opacity = 0.2,
+        showscale = FALSE,
+        intensity = rep(1, length(x)),
+        colorscale = list(c(0, 1), c(color, color)),
+        color = I(color),
+        showlegend = FALSE
+      )
   )
 }
 # Helper for 3D scatter plot
 add_3d_scatter <- function(p, data, xcol, ycol, zcol, colorcol, colors, ...) {
   data <- data[stats::complete.cases(data[, c(xcol, ycol, zcol, colorcol)]), ]
   suppressWarnings(
-    p |> plotly::add_markers(
-      data = data,
-      x = data[[xcol]],
-      y = data[[ycol]],
-      z = data[[zcol]],
-      color = data[[colorcol]],
-      colors = colors,
-      text = data$stap_id,
-      ...
-    )
+    p |>
+      plotly::add_markers(
+        data = data,
+        x = data[[xcol]],
+        y = data[[ycol]],
+        z = data[[zcol]],
+        color = data[[colorcol]],
+        colors = colors,
+        text = data$stap_id,
+        ...
+      )
   )
 }

@@ -41,7 +41,9 @@ Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contain
 \item \code{magnetic_xc}, \code{magnetic_yc}, \code{magnetic_zc}: Calibrated magnetic data
 \item \code{magnetic_xcp}, \code{magnetic_ycp}, \code{magnetic_zcp}: Calibrated magnetic data projected in NED
 frame
-\item \code{H}: Heading (radian, North=0)
+\item \code{H}: Magnetic heading / yaw (radian). Computed as \code{atan2(-magnetic_ycp, magnetic_xcp)} after
+tilt compensation. 0 = North, +pi/2 = East, pi = South, -pi/2 = West. Range (-pi, pi]; use
+\code{(H + 2*pi) \%\% (2*pi)} for [0, 2*pi) representation.
 \item \code{F}: Magnetic field intensity (Gauss)
 \item \code{I}: Inclination (radian)
 Also returns (invisibly) the calibration dataset used (\code{tag$mag_calib}) and calibration

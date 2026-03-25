@@ -6,5 +6,5 @@ citEntry(
   author = person("Raphaël", "Nussbaumer", email = "rafnuss@gmail.com", role = c("aut", "cre")),
   year = "2025",
   note = "R package version 0.1.0",
-  url = "https://github.com/Rafnuss/GeoMag"
+  url = "https://github.com/GeoPressure/GeoMag"
 )

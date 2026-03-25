@@ -16,7 +16,9 @@ expect_error(plot_mag(tag, "histogram"))
 
 # Calib without stap: ellipse
 tag2 <- geomag_calib(tag, quiet = TRUE)
-expect_true(all(c("magnetic_xc", "magnetic_yc", "magnetic_zc") %in% names(tag2$magnetic)))
+expect_true(all(
+  c("magnetic_xc", "magnetic_yc", "magnetic_zc") %in% names(tag2$magnetic)
+))
 expect_true("is_static" %in% names(tag2$magnetic))
 expect_true(tag2$param$geomag_calib$calib_method == "ellipse")
 plot_mag(tag2, "magnetic")
@@ -31,7 +33,8 @@ tag <- tag_label(tag, quiet = TRUE)
 # plot_mag(tag2,"calib")
 
 # Calib with known
-tag <- tag_set_map(tag,
+tag <- tag_set_map(
+  tag,
   extent = c(-18, 23, 0, 50),
   scale = 2,
   known = data.frame(
