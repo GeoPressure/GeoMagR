@@ -51,10 +51,10 @@
 #' @export
 geomag_map <- function(tag,
                        compute_known = FALSE,
-                       sd_e_f = .007,
-                       sd_e_i = 5,
-                       sd_m_f = .01,
-                       sd_m_i = 3.2,
+                       sd_e_f = 0.009,
+                       sd_e_i = 2.6,
+                       sd_m_f = 0.014,
+                       sd_m_i = 3.5,
                        ref_map = geomag_map_ref(tag),
                        quiet = FALSE) {
   GeoPressureR:::tag_assert(tag, "setmap")
