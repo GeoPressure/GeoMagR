@@ -16,18 +16,19 @@ optionally calibration) data.}
 \item{stap_id}{Integer or vector, stationary period(s) to plot calibration fit for
 (type="calib").}
 
-\item{path}{Optional, a data frame with columns \code{start}, \code{end}, \code{stap_id}, \code{lon}, \code{lat} for
-plotting reference paths in "timeseries" or "histogram" types.}
+\item{path}{Optional for \code{"timeseries"} and required for \code{"histogram"}. A data frame with
+columns \code{start}, \code{end}, \code{stap_id}, \code{lon}, \code{lat} for plotting reference paths.}
 }
 \value{
-A plotly \code{plot_ly} object (interactive 3D/2D plot) or a ggplotly object for time
-series/histogram types.
+A \code{plotly::plot_ly()} object for magnetic, calibration, and acceleration plots; a
+\code{plotly::ggplotly()} object for timeseries plots; or a \code{ggplot2} object for histogram plots.
 }
 \description{
 Provides interactive 3D and 2D plots for exploring \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } sensor data, including
 raw and calibrated magnetic data, fitted calibration ellipsoids, and (projected) acceleration
-data. Color-coding by stationary period or movement state is supported. Also supports time
-series and histogram error plots against reference paths.
+data. Color-coding by stationary period or movement state is supported. Time series plots can
+optionally overlay a reference path, and histogram plots compare errors against a reference
+path.
 
 Plot types:
 \itemize{
@@ -46,7 +47,9 @@ against reference path.
 \item Uses the \code{scico} or \code{viridisLite} palettes for clear color separation.
 \item For type "calib", if \code{stap_id} is missing, periods with min/max radii are shown.
 \item For acceleration plots, static/moving state is estimated if not present.
-\item For "timeseries" and "histogram" types, a reference path is required for error analysis.
+\item For histogram plots, a reference path is required for error analysis.
+\item For timeseries plots, a reference path is optional and only used for overlaying reference
+segments.
 }
 }
 \examples{

@@ -16,7 +16,8 @@ geomag_map(
 )
 }
 \arguments{
-\item{tag}{A \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object }.}
+\item{tag}{A calibrated \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } with map metadata set via
+\href{https://geopressure.org/GeoPressureR/reference/tag_set_map.html}{tag_set_map()}.}
 
 \item{compute_known}{Logical. If TRUE, computes likelihood maps for known stationary periods;
 if FALSE, fixes the likelihood at the known location.}
@@ -33,9 +34,9 @@ value or one per stap).}
 \item{sd_m_i}{Numeric. Standard deviation of stationary-period-specific noise of inclination
 error (single value or per stap).}
 
-\item{ref_map}{Raster stack or list. Reference magnetic maps (intensity and inclination)
-computed by default using \code{geomag_map_ref()}. Provide it if you've already computed it to save
-computational time.}
+\item{ref_map}{A \code{SpatRaster} with layers \code{intensity} and \code{inclinaison}. By default this is
+computed by \code{geomag_map_ref()}. Provide it if you've already computed it to save computational
+time.}
 
 \item{quiet}{Logical. If TRUE, suppresses progress messages.}
 }
@@ -52,6 +53,11 @@ and updated parameters in \code{tag$param}.
 \description{
 Estimates a likelihood map for each stationary period based on observed magnetic data
 (intensity and inclination) compared to the expected values from the World Magnetic Model (WMM).
+}
+\details{
+The tag must already contain calibrated magnetic data and map metadata created with
+\code{tag_set_map()}. \code{geomag_map()} uses the tag's pressure record to estimate altitude for the WMM
+reference map.
 }
 \examples{
 library(GeoPressureR)

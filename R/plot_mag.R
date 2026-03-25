@@ -6,8 +6,9 @@ utils::globalVariables(c(".data"))
 #' Provides interactive 3D and 2D plots for exploring [GeoPressureR tag object
 #' ](https://geopressure.org/GeoPressureR/reference/tag_create.html) sensor data, including
 #' raw and calibrated magnetic data, fitted calibration ellipsoids, and (projected) acceleration
-#' data. Color-coding by stationary period or movement state is supported. Also supports time
-#' series and histogram error plots against reference paths.
+#' data. Color-coding by stationary period or movement state is supported. Time series plots can
+#' optionally overlay a reference path, and histogram plots compare errors against a reference
+#' path.
 #'
 #' Plot types:
 #' \itemize{
@@ -28,17 +29,19 @@ utils::globalVariables(c(".data"))
 #'  "timeseries", or "histogram".
 #' @param stap_id Integer or vector, stationary period(s) to plot calibration fit for
 #' (type="calib").
-#' @param path Optional, a data frame with columns `start`, `end`, `stap_id`, `lon`, `lat` for
-#' plotting reference paths in "timeseries" or "histogram" types.
+#' @param path Optional for `"timeseries"` and required for `"histogram"`. A data frame with
+#' columns `start`, `end`, `stap_id`, `lon`, `lat` for plotting reference paths.
 #'
-#' @return A plotly `plot_ly` object (interactive 3D/2D plot) or a ggplotly object for time
-#' series/histogram types.
+#' @return A `plotly::plot_ly()` object for magnetic, calibration, and acceleration plots; a
+#' `plotly::ggplotly()` object for timeseries plots; or a `ggplot2` object for histogram plots.
 #'
 #' @details
 #' - Uses the `scico` or `viridisLite` palettes for clear color separation.
 #' - For type "calib", if `stap_id` is missing, periods with min/max radii are shown.
 #' - For acceleration plots, static/moving state is estimated if not present.
-#' - For "timeseries" and "histogram" types, a reference path is required for error analysis.
+#' - For histogram plots, a reference path is required for error analysis.
+#' - For timeseries plots, a reference path is optional and only used for overlaying reference
+#'   segments.
 #'
 #' @examples
 #' library(GeoPressureR)

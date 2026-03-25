@@ -36,14 +36,13 @@ Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contain
 \item \code{magnetic_x}, \code{magnetic_y}, \code{magnetic_z}: Raw magnetic data
 \item \code{is_static}: Scaled MAD of acceleration (0 = static, >1 = movement)
 \item \code{pitch}, \code{roll}: Orientation angles (radian)
-\item \code{acceleration_xp}, \code{acceleration_yp}, \code{acceleration_zp}: Gravity projected in NED frame
+\item \code{acceleration_xp}, \code{acceleration_yp}, \code{acceleration_zp}: Projected acceleration in NED frame
 \item \code{is_outlier}: Logical, marks outliers in magnetic data
 \item \code{magnetic_xc}, \code{magnetic_yc}, \code{magnetic_zc}: Calibrated magnetic data
 \item \code{magnetic_xcp}, \code{magnetic_ycp}, \code{magnetic_zcp}: Calibrated magnetic data projected in NED
 frame
-\item \code{H}: Magnetic heading / yaw (radian). Computed as \code{atan2(-magnetic_ycp, magnetic_xcp)} after
-tilt compensation. 0 = North, +pi/2 = East, pi = South, -pi/2 = West. Range (-pi, pi]; use
-\code{(H + 2*pi) \%\% (2*pi)} for [0, 2*pi) representation.
+\item \code{H}: Magnetic heading / yaw (degrees). Computed from the calibrated magnetic axes after
+tilt compensation. 0 = North, 90 = East, 180 = South, 270 = West. Range [0, 360).
 \item \code{F}: Magnetic field intensity (Gauss)
 \item \code{I}: Inclination (radian)
 Also returns (invisibly) the calibration dataset used (\code{tag$mag_calib}) and calibration
@@ -68,7 +67,7 @@ Classify each data point as static or moving by evaluating acceleration signals.
 \item \strong{Tilt Compensation:}
 \itemize{
 \item Compute pitch and roll from acceleration.
-\item Project gravity and calibrated magnetic data into the horizontal plane of the Earth frame.
+\item Project acceleration and calibrated magnetic data into the horizontal plane of the Earth frame.
 }
 \item \strong{Orientation and Field Parameters:}
 \itemize{

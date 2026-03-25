@@ -121,19 +121,6 @@ is_outlier <- function(x, thresh = 3) {
   abs(x - med) / (mad_val + .Machine$double.eps) > thresh
 }
 
-#' Identify Outliers in 3D Data (Any Axis)
-#' @param x Numeric matrix/data.frame with 3 columns.
-#' @param thresh Numeric, MAD threshold (default 3).
-#' @return Logical vector: TRUE if any axis is an outlier for a row.
-#' @noRd
-is_outlier_3d <- function(x, thresh = 3) {
-  stopifnot(ncol(x) == 3)
-  med <- apply(x, 2, stats::median, na.rm = TRUE)
-  mad_val <- apply(x, 2, stats::mad, na.rm = TRUE)
-  scaled <- abs(sweep(x, 2, med)) / (mad_val + .Machine$double.eps)
-  apply(scaled, 1, function(row) any(row > thresh))
-}
-
 #' Classify Static/Motion State Based on Acceleration
 #' @param tag GeoPressureR tag object, must contain `$magnetic` (and optionally `$acceleration`).
 #' @param thresh_hard Numeric, absolute threshold for 1g (default 0.1).

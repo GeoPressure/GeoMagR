@@ -16,7 +16,7 @@
 #'    - Fit and apply a calibration model (sphere/ellipse or their stap variants).
 #' 3. **Tilt Compensation:**
 #'    - Compute pitch and roll from acceleration.
-#'    - Project gravity and calibrated magnetic data into the horizontal plane of the Earth frame.
+#'    - Project acceleration and calibrated magnetic data into the horizontal plane of the Earth frame.
 #' 4. **Orientation and Field Parameters:**
 #'    - Calculate heading, field intensity, and inclination.
 #'    - Store calibration metadata and processed data in the tag object.
@@ -38,14 +38,14 @@
 #'   - `magnetic_x`, `magnetic_y`, `magnetic_z`: Raw magnetic data
 #'   - `is_static`: Scaled MAD of acceleration (0 = static, >1 = movement)
 #'   - `pitch`, `roll`: Orientation angles (radian)
-#'   - `acceleration_xp`, `acceleration_yp`, `acceleration_zp`: Gravity projected in NED frame
+#'   - `acceleration_xp`, `acceleration_yp`, `acceleration_zp`: Projected acceleration in NED
+#'     frame
 #'   - `is_outlier`: Logical, marks outliers in magnetic data
 #'   - `magnetic_xc`, `magnetic_yc`, `magnetic_zc`: Calibrated magnetic data
 #'   - `magnetic_xcp`, `magnetic_ycp`, `magnetic_zcp`: Calibrated magnetic data projected in NED
 #'   frame
-#'   - `H`: Magnetic heading / yaw (radian). Computed as `atan2(-magnetic_ycp, magnetic_xcp)` after
-#'     tilt compensation. 0 = North, +pi/2 = East, pi = South, -pi/2 = West. Range (-pi, pi]; use
-#'     `(H + 2*pi) %% (2*pi)` for [0, 2*pi) representation.
+#'   - `H`: Magnetic heading / yaw (degrees). Computed from the calibrated magnetic axes after
+#'     tilt compensation. 0 = North, 90 = East, 180 = South, 270 = West. Range [0, 360).
 #'   - `F`: Magnetic field intensity (Gauss)
 #'   - `I`: Inclination (radian)
 #' Also returns (invisibly) the calibration dataset used (`tag$mag_calib`) and calibration
@@ -217,7 +217,6 @@ geomag_calib_rm <- function(mag_calib, tag) {
       "x" = "No calibration data left after removing extreme values.",
       ">" = "Check the magnetic sensor unit for issues."
     ))
-    return(mag_calib)
   }
 
   # Initial offset estimation using spherical model
