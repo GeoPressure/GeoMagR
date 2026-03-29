@@ -3,6 +3,11 @@
 
 # GeoMag
 
+<p align="center">
+
+<img src="man/figures/logo.png" alt="GeoMagR logo" width="180" />
+</p>
+
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/GeoPressure/GeoMag/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/GeoPressure/GeoMag/actions/workflows/R-CMD-check.yaml)
