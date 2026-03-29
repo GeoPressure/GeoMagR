@@ -3,6 +3,7 @@ template:
   bootstrap: 5
   bslib:
     bootswatch: pulse
+    primary: "#7c289a"
 reference:
   - title: GeoMagR
     contents:

@@ -1,10 +1,10 @@
 ---
-title: "Movement Model with Magnetic Likelihood"
+title: "Movement Model with Magnetic Likelihoods"
 format:
   html:
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Movement Model with Magnetic Likelihood}
+  %\VignetteIndexEntry{Movement Model with Magnetic Likelihoods}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---

@@ -50,33 +50,14 @@ pak::pkg_install("GeoPressure/GeoMagR")
 
 ------------------------------------------------------------------------
 
-## 🛠️ Example Usage
+## 📘 Vignettes
 
-``` r
-library(GeoMagR)
-library(GeoPressureR)
+For full workflows, see the vignettes:
 
-withr::with_dir(system.file("extdata", package = "GeoMagR"), {
-  # Create a GeoPressureR tag object (see GeoPressureR documentation)
-  tag <- tag_create("14DM")
-
-  # Label the tag
-  tag <- tag_label(tag)
-})
-
-# Calibrate the tag's magnetic data
-tag <- geomag_calib(tag)
-
-# Interactive 3D plot of calibrated magnetic field
-plot_mag(tag, type = "acceleration")
-plot_mag(tag, type = "magnetic")
-plot_mag(tag, type = "calib")
-
-# Compute the spatial likelihood map for each stationary period
-tag <- geomag_map(tag)
-
-plot(tag, "map_magnetic")
-```
+- [Getting Started with
+  GeoMagR](https://geopressure.org/GeoMagR/articles/getting-started.html)
+- [Movement Model with Magnetic
+  Likelihoods](https://geopressure.org/GeoMagR/articles/movement-model-magnetic-likelihood.html)
 
 ------------------------------------------------------------------------
 
