@@ -1,12 +1,7 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- README.md is generated from README.Rmd. Please edit that file and use devtools::build_readme() -->
 
-# GeoMagR
-
-<p align="center">
-
-<img src="man/figures/logo.png" alt="GeoMagR logo" width="180" />
-</p>
+# GeoMagR <img src="man/figures/logo.png" align="right" height="139"/>
 
 <!-- badges: start -->
 
@@ -29,15 +24,13 @@ triaxis magnetic field measurements, including:
 - **Likelihood map estimation:** Compute spatial likelihood maps using
   the World Magnetic Model (WMM), comparing observed and known intensity
   and inclination.
-- **Interactive visualization:** Explore raw and calibrated data,
-  ellipsoid fits, and 3D scatterplots.
+- **Interactive visualization:** Explore raw and calibrated magnetic
+  data with dedicated interactive plots.
 
 GeoMagR is designed to work seamlessly with
 [GeoPressureR](https://geopressure.org/GeoPressureR), enabling
 high-resolution migratory track reconstruction using multi-sensor
 archival tags.
-
-------------------------------------------------------------------------
 
 ## 📦 Installation
 
@@ -48,8 +41,6 @@ To install the latest version from GitHub:
 pak::pkg_install("GeoPressure/GeoMagR")
 ```
 
-------------------------------------------------------------------------
-
 ## 📘 Vignettes
 
 For full workflows, see the vignettes:
@@ -59,17 +50,16 @@ For full workflows, see the vignettes:
 - [Movement Model with Magnetic
   Likelihoods](https://geopressure.org/GeoMagR/articles/movement-model-magnetic-likelihood.html)
 
-------------------------------------------------------------------------
-
 ## 📚 Citation
 
 If you use GeoMagR in your research, please cite:
 
-> Nussbaumer, R. (2025). GeoMagR: Geolocation by Magnetic Field.
+> Nussbaumer, R. (2025). GeoMagR: Geolocation by Magnetic Field. Zenodo.
+> <https://doi.org/10.5281/zenodo.19217183>. Available at:
 > <https://github.com/GeoPressure/GeoMagR>
 
-For citation information in R:
-
-``` r
-citation("GeoMagR")
-```
+For citation information in R with list(title = “GeoMagR: Geolocation by
+Magnetic Field”, author = list(list(given = “Raphaël”, family =
+“Nussbaumer”, role = c(“aut”, “cre”), email = “<rafnuss@gmail.com>”,
+comment = NULL)), year = “2025”, note = “R package version 0.1.0”, url =
+“<https://github.com/GeoPressure/GeoMagR>”)
