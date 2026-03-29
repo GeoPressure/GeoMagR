@@ -4,35 +4,53 @@
 \alias{plot_mag}
 \title{Interactive Visualization of Magnetic and Acceleration Data}
 \usage{
-plot_mag(tag, type = "magnetic", stap_id = NULL, path = NULL)
+plot_mag(
+  tag,
+  type = "magnetic",
+  stap_id = NULL,
+  path = NULL,
+  static_thr_hard = NULL,
+  static_thr_outlier = NULL
+)
 }
 \arguments{
-\item{tag}{A \href{https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } containing magnetic (and
+\item{tag}{A \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } containing magnetic (and
 optionally calibration) data.}
 
-\item{type}{Character, plot type. One of "magnetic", "calib", "acceleration", "acceleration_p",
-"timeseries", or "histogram".}
+\item{type}{Character, plot type. One of "magnetic", "magnetic_c", "magnetic_cp",
+"magnetic_calib" (or alias "calib"), "acceleration", "acceleration_p", "timeseries",
+or "histogram".}
 
 \item{stap_id}{Integer or vector, stationary period(s) to plot calibration fit for
-(type="calib").}
+(type="magnetic_calib" or "calib").}
 
-\item{path}{Optional, a data frame with columns \code{start}, \code{end}, \code{stap_id}, \code{lon}, \code{lat} for
-plotting reference paths in "timeseries" or "histogram" types.}
+\item{path}{Optional for \code{"timeseries"} and required for \code{"histogram"}. A data frame with
+columns \code{start}, \code{end}, \code{stap_id}, \code{lon}, \code{lat} for plotting reference paths.}
+
+\item{static_thr_hard}{Numeric. Hard threshold around 1 g used when classifying static
+samples in \code{"acceleration"} plots. Passed to \code{\link[=tag_static]{tag_static()}}.}
+
+\item{static_thr_outlier}{Numeric. MAD threshold used to remove outliers among candidate static
+samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
 }
 \value{
-A plotly \code{plot_ly} object (interactive 3D/2D plot) or a ggplotly object for time
-series/histogram types.
+A \code{plotly::plot_ly()} object for magnetic, calibration, and acceleration plots; a
+\code{plotly::ggplotly()} object for timeseries plots; or a \code{ggplot2} object for histogram plots.
 }
 \description{
-Provides interactive 3D and 2D plots for exploring \href{https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } sensor data, including
+Provides interactive 3D and 2D plots for exploring \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } sensor data, including
 raw and calibrated magnetic data, fitted calibration ellipsoids, and (projected) acceleration
-data. Color-coding by stationary period or movement state is supported. Also supports time
-series and histogram error plots against reference paths.
+data. Color-coding by stationary period or movement state is supported. Time series plots can
+optionally overlay a reference path, and histogram plots compare errors against a reference
+path.
 
 Plot types:
 \itemize{
 \item \strong{"magnetic"}: Raw magnetic data in sensor frame, colored by stationary period.
-\item \strong{"calib"}: Calibration points and fitted ellipsoids for selected periods.
+\item \strong{"magnetic_c"}: Calibrated magnetic data in sensor frame, colored by stationary period.
+\item \strong{"magnetic_cp"}: Calibrated magnetic data projected in the Earth frame, colored by stationary period.
+\item \strong{"magnetic_calib"}: Calibration points and fitted ellipsoids for selected periods.
+\item \strong{"calib"}: Alias of \code{"magnetic_calib"} (kept for backward compatibility).
 \item \strong{"acceleration"}: Raw acceleration, colored by static/moving classification.
 \item \strong{"acceleration_p"}: Projected acceleration (NED frame), with reference gravity.
 \item \strong{"timeseries"}: Time series of inclination and intensity, with optional reference
@@ -44,14 +62,20 @@ against reference path.
 \details{
 \itemize{
 \item Uses the \code{scico} or \code{viridisLite} palettes for clear color separation.
-\item For type "calib", if \code{stap_id} is missing, periods with min/max radii are shown.
+\item For magnetic plots, "magnetic_c" and "magnetic_cp" require calibrated data from \code{\link[=geomag_calib]{geomag_calib()}}.
+\item For type "magnetic_calib" (or alias "calib"), if \code{stap_id} is missing, periods with
+min/max radii are shown.
+\item If \code{stap_id} is missing in \code{tag$magnetic} and/or \code{tag$mag_calib}, a fallback grouping is
+created automatically so plots still render.
 \item For acceleration plots, static/moving state is estimated if not present.
-\item For "timeseries" and "histogram" types, a reference path is required for error analysis.
+\item For histogram plots, a reference path is required for error analysis.
+\item For timeseries plots, a reference path is optional and only used for overlaying reference
+segments.
 }
 }
 \examples{
 library(GeoPressureR)
-withr::with_dir(system.file("extdata", package = "GeoMag"), {
+withr::with_dir(system.file("extdata", package = "GeoMagR"), {
   tag <- tag_create("14DM", quiet = TRUE)
   tag <- tag_label(tag, quiet = TRUE)
   tag <- geomag_calib(tag, quiet = TRUE)

@@ -1,6 +1,6 @@
 ^renv$
 ^renv\.lock$
-^GeoMag\.Rproj$
+^GeoMagR\.Rproj$
 ^\.Rproj\.user$
 ^_pkgdown\.yml$
 ^docs$
@@ -13,10 +13,17 @@
 ^doc$
 ^Meta$
 ^\.lintr$
+^AGENTS\.md$
+^assets$
+^assets/.*
 ^CITATION\.cff$
 ^cran-comments.md$
 ^data-raw$
 ^inst/geopressureviz/geopressureviz\.RData$
+^vignettes/.*_files$
+^vignettes/.*\.html$
+^vignettes/\.quarto$
+^vignettes/\.quarto/.*
 ^\.DS_Store$
 ^CRAN-SUBMISSION$
 ^codemeta\.json$

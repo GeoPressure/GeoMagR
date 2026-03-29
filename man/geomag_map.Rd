@@ -7,16 +7,17 @@
 geomag_map(
   tag,
   compute_known = FALSE,
-  sd_e_f = 0.007,
-  sd_e_i = 5,
-  sd_m_f = 0.01,
-  sd_m_i = 3.2,
+  sd_e_f = 0.009,
+  sd_e_i = 2.6,
+  sd_m_f = 0.014,
+  sd_m_i = 3.5,
   ref_map = geomag_map_ref(tag),
   quiet = FALSE
 )
 }
 \arguments{
-\item{tag}{A \href{https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object }.}
+\item{tag}{A calibrated \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } with map metadata set via
+\href{https://geopressure.org/GeoPressureR/reference/tag_set_map.html}{tag_set_map()}.}
 
 \item{compute_known}{Logical. If TRUE, computes likelihood maps for known stationary periods;
 if FALSE, fixes the likelihood at the known location.}
@@ -33,14 +34,14 @@ value or one per stap).}
 \item{sd_m_i}{Numeric. Standard deviation of stationary-period-specific noise of inclination
 error (single value or per stap).}
 
-\item{ref_map}{Raster stack or list. Reference magnetic maps (intensity and inclination)
-computed by default using \code{geomag_map_ref()}. Provide it if you've already computed it to save
-computational time.}
+\item{ref_map}{A \code{SpatRaster} with layers \code{intensity} and \code{inclination}. By default this is
+computed by \code{geomag_map_ref()}. Provide it if you've already computed it to save computational
+time.}
 
 \item{quiet}{Logical. If TRUE, suppresses progress messages.}
 }
 \value{
-A \href{https://raphaelnussbaumer.com/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } with likelihood maps
+A \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } with likelihood maps
 added as:
 \itemize{
 \item \code{tag$map_magnetic_intensity}
@@ -53,9 +54,14 @@ and updated parameters in \code{tag$param}.
 Estimates a likelihood map for each stationary period based on observed magnetic data
 (intensity and inclination) compared to the expected values from the World Magnetic Model (WMM).
 }
+\details{
+The tag must already contain calibrated magnetic data and map metadata created with
+\code{tag_set_map()}. \code{geomag_map()} uses the tag's pressure record to estimate altitude for the WMM
+reference map.
+}
 \examples{
 library(GeoPressureR)
-withr::with_dir(system.file("extdata", package = "GeoMag"), {
+withr::with_dir(system.file("extdata", package = "GeoMagR"), {
   tag <- tag_create("14DM", quiet = TRUE)
   tag <- tag_label(tag, quiet = TRUE)
   tag <- tag_set_map(tag,

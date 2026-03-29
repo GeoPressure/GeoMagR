@@ -19,7 +19,7 @@
 #'
 #' @noRd
 geomag_calib_rotate <- function(a, roll, pitch, yaw = 0) {
-  # Input validation
+  # Validate dimensions and angle inputs.
   if (is.null(roll) || length(roll) == 0) {
     cli::cli_abort("{.arg roll} cannot be {.val NULL} or empty")
   }
@@ -31,10 +31,16 @@ geomag_calib_rotate <- function(a, roll, pitch, yaw = 0) {
   }
   assertthat::assert_that(assertthat::are_equal(dim(a)[2], 3))
 
-  # Replicate angles if single value provided
-  if (length(roll) == 1) roll <- rep(roll, nrow(a))
-  if (length(pitch) == 1) pitch <- rep(pitch, nrow(a))
-  if (length(yaw) == 1) yaw <- rep(yaw, nrow(a))
+  # Recycle scalar angles to row-wise vectors.
+  if (length(roll) == 1) {
+    roll <- rep(roll, nrow(a))
+  }
+  if (length(pitch) == 1) {
+    pitch <- rep(pitch, nrow(a))
+  }
+  if (length(yaw) == 1) {
+    yaw <- rep(yaw, nrow(a))
+  }
 
   assertthat::assert_that(assertthat::are_equal(nrow(a), length(roll)))
   assertthat::assert_that(assertthat::are_equal(nrow(a), length(pitch)))
