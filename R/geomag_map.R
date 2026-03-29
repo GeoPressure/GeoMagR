@@ -189,7 +189,7 @@ geomag_map <- function(
 #' @param tag A GeoPressureR tag object.
 #' @param quiet Logical. If TRUE, suppresses progress messages.
 #' @return A list of two terra raster layers: `intensity` (Gauss) and `inclination` (degrees).
-#' @noRd
+#' @export
 geomag_map_ref <- function(tag, quiet = FALSE) {
   height <- -(288.15 / -0.0065) *
     (1 - ((stats::median(tag$pressure$value) / 1013.25)^(1 / 5.2561)))

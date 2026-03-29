@@ -227,9 +227,11 @@ plot(tag, "map_magnetic_intensity")
 
 We can also add a water mask, here just as an example for inclination.
 ```{r}
-tag$map_magnetic_inclination <- map_add_mask_water(
-  tag$map_magnetic_inclination
-)
+if (requireNamespace("rnaturalearth", quietly = TRUE)) {
+  tag$map_magnetic_inclination <- map_add_mask_water(
+    tag$map_magnetic_inclination
+  )
+}
 plot(tag, "map_magnetic_inclination")
 ```
 

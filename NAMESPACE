@@ -2,5 +2,6 @@
 
 export(geomag_calib)
 export(geomag_map)
+export(geomag_map_ref)
 export(plot_mag)
 export(tag_static)
