@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# GeoMag
+# GeoMagR
 
 <p align="center">
   <img src="man/figures/logo.png" alt="GeoMagR logo" width="180" />
@@ -21,21 +21,21 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![R-CMD-check](https://github.com/GeoPressure/GeoMag/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/GeoPressure/GeoMag/actions/workflows/R-CMD-check.yaml)
-[![pkgdown.yaml](https://github.com/GeoPressure/GeoMag/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/GeoPressure/GeoMag/actions/workflows/pkgdown.yaml)
-[![jarl](https://github.com/GeoPressure/GeoMag/actions/workflows/jarl-check.yml/badge.svg)](https://github.com/GeoPressure/GeoMag/actions/workflows/jarl-check.yml)
-[![format](https://github.com/GeoPressure/GeoMag/actions/workflows/format-check.yml/badge.svg)](https://github.com/GeoPressure/GeoMag/actions/workflows/format-check.yml)
-[![Codecov test coverage](https://codecov.io/gh/GeoPressure/GeoMag/graph/badge.svg)](https://app.codecov.io/gh/GeoPressure/GeoMag)
+[![R-CMD-check](https://github.com/GeoPressure/GeoMagR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/GeoPressure/GeoMagR/actions/workflows/R-CMD-check.yaml)
+[![pkgdown.yaml](https://github.com/GeoPressure/GeoMagR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/GeoPressure/GeoMagR/actions/workflows/pkgdown.yaml)
+[![jarl](https://github.com/GeoPressure/GeoMagR/actions/workflows/jarl-check.yml/badge.svg)](https://github.com/GeoPressure/GeoMagR/actions/workflows/jarl-check.yml)
+[![format](https://github.com/GeoPressure/GeoMagR/actions/workflows/format-check.yml/badge.svg)](https://github.com/GeoPressure/GeoMagR/actions/workflows/format-check.yml)
+[![Codecov test coverage](https://codecov.io/gh/GeoPressure/GeoMagR/graph/badge.svg)](https://app.codecov.io/gh/GeoPressure/GeoMagR)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19217142.svg)](https://doi.org/10.5281/zenodo.19217142)
 <!-- badges: end -->
 
-**GeoMag** is an R package to estimate animal geolocation based on triaxis magnetic field measurements, including:
+**GeoMagR** is an R package to estimate animal geolocation based on triaxis magnetic field measurements, including:
 
-- **Magnetic calibration:** Correct magnetic distortion using in-situ or in-vitro data.
+- **Magnetic calibration:** Correct magnetic distortion using field-data or in-vitro data.
 - **Likelihood map estimation:** Compute spatial likelihood maps using the World Magnetic Model (WMM), comparing observed and known intensity and inclination.
 - **Interactive visualization:** Explore raw and calibrated data, ellipsoid fits, and 3D scatterplots.
 
-GeoMag is designed to work seamlessly with [GeoPressureR](https://geopressure.org/GeoPressureR), enabling high-resolution migratory track reconstruction using multi-sensor archival tags.
+GeoMagR is designed to work seamlessly with [GeoPressureR](https://geopressure.org/GeoPressureR), enabling high-resolution migratory track reconstruction using multi-sensor archival tags.
 
 
 ---
@@ -46,7 +46,7 @@ To install the latest version from GitHub:
 
 ```r
 # install.packages("pak")
-pak::pkg_install("GeoPressure/GeoMag")
+pak::pkg_install("GeoPressure/GeoMagR")
 ```
 
 ---
@@ -54,10 +54,10 @@ pak::pkg_install("GeoPressure/GeoMag")
 ## 🛠️ Example Usage
 
 ```r
-library(GeoMag)
+library(GeoMagR)
 library(GeoPressureR)
 
-withr::with_dir(system.file("extdata", package = "GeoMag"), {
+withr::with_dir(system.file("extdata", package = "GeoMagR"), {
   # Create a GeoPressureR tag object (see GeoPressureR documentation)
   tag <- tag_create("14DM")
 
@@ -83,11 +83,11 @@ plot(tag, "map_magnetic")
 
 ## 📚 Citation
 
-If you use GeoMag in your research, please cite:
+If you use GeoMagR in your research, please cite:
 
-> Nussbaumer, R. (2025). GeoMag: Geolocation by Magnetic Field. https://github.com/GeoPressure/GeoMag
+> Nussbaumer, R. (2025). GeoMagR: Geolocation by Magnetic Field. https://github.com/GeoPressure/GeoMagR
 
 For citation information in R:
 ```r
-citation("GeoMag")
+citation("GeoMagR")
 ```

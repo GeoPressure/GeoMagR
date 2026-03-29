@@ -1,6 +1,6 @@
 ^renv$
 ^renv\.lock$
-^GeoMag\.Rproj$
+^GeoMagR\.Rproj$
 ^\.Rproj\.user$
 ^_pkgdown\.yml$
 ^docs$

@@ -1,6 +1,6 @@
-Package: GeoMag
+Package: GeoMagR
 Title: Geolocation by Magnetic Field
-URL: https://github.com/GeoPressure/GeoMag, https://geopressure.org/GeoMag/
+URL: https://github.com/GeoPressure/GeoMagR, https://geopressure.org/GeoMagR/
 Description: 
     Provides methods to produce likelihood maps of position based on magnetic field data, including calibration, outlier removal, and interactive 3D visualization. Designed for use with animal geolocation workflows and fully compatible with the GeoPressureR framework (see https://geopressure.org/GeoPressureR). Includes functions for calibration, map generation, and integration with World Magnetic Model data.
 Authors@R: 

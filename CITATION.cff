@@ -4,10 +4,10 @@
 # --------------------------------------------
 
 cff-version: 1.2.0
-message: 'To cite package "GeoMag" in publications use:'
+message: 'To cite package "GeoMagR" in publications use:'
 type: software
 license: CC-BY-4.0
-title: "GeoMag: Geolocation by Magnetic Field"
+title: "GeoMagR: Geolocation by Magnetic Field"
 version: 0.1.0
 abstract:
   Provides methods to produce likelihood maps of position based on magnetic
@@ -23,7 +23,7 @@ authors:
     orcid: https://orcid.org/0000-0002-8185-1020
 preferred-citation:
   type: manual
-  title: "GeoMag: Geolocation by Magnetic Field"
+  title: "GeoMagR: Geolocation by Magnetic Field"
   authors:
     - family-names: Nussbaumer
       given-names: Raphaël
@@ -31,9 +31,9 @@ preferred-citation:
       orcid: https://orcid.org/0000-0002-8185-1020
   year: "2025"
   notes: R package version 0.1.0
-  url: https://github.com/GeoPressure/GeoMag
-repository-code: https://github.com/GeoPressure/GeoMag
-url: https://geopressure.org/GeoMag/
+  url: https://github.com/GeoPressure/GeoMagR
+repository-code: https://github.com/GeoPressure/GeoMagR
+url: https://geopressure.org/GeoMagR/
 contact:
   - family-names: Nussbaumer
     given-names: Raphaël

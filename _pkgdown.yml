@@ -1,10 +1,10 @@
-url: https://geopressure.org/GeoMag/
+url: https://geopressure.org/GeoMagR/
 template:
   bootstrap: 5
   bslib:
     bootswatch: pulse
 reference:
-  - title: GeoMag
+  - title: GeoMagR
     contents:
       - geomag_calib
       - geomag_map
