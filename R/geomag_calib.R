@@ -143,7 +143,7 @@ geomag_calib <- function(
       names(mag_calib) &&
       !is.null(tag$stap) &&
       "known_lat" %in% names(tag$stap) &&
-      any(!is.na(tag$stap$known_lat))
+      !all(is.na(tag$stap$known_lat))
     if (has_known_stap) {
       calib_method <- "ellipse_stap"
     } else {

@@ -11,17 +11,23 @@ test_that("geomag_calib works when magnetic data has no stap_id", {
 
     out <- geomag_calib(tag, quiet = TRUE)
 
-    expect_true(all(c(
-      "magnetic_xc",
-      "magnetic_yc",
-      "magnetic_zc"
-    ) %in% names(out$magnetic)))
-    expect_false("stap_id" %in% names(out$magnetic))
-    expect_true(out$param$geomag_calib$calib_method %in% c(
-      "sphere",
-      "ellipse",
-      "near-sphere"
+    expect_true(all(
+      c(
+        "magnetic_xc",
+        "magnetic_yc",
+        "magnetic_zc"
+      ) %in%
+        names(out$magnetic)
     ))
+    expect_false("stap_id" %in% names(out$magnetic))
+    expect_true(
+      out$param$geomag_calib$calib_method %in%
+        c(
+          "sphere",
+          "ellipse",
+          "near-sphere"
+        )
+    )
   })
 })
 

@@ -540,11 +540,12 @@ geomag_calib_to_calibrated <- function(
     if (length(radius_amplitude) == 1L) {
       xyz <- xyz / radius_amplitude
     } else {
-      xyz <- xyz / matrix(
-        rep(radius_amplitude, each = ncol(xyz)),
-        ncol = ncol(xyz),
-        byrow = TRUE
-      )
+      xyz <- xyz /
+        matrix(
+          rep(radius_amplitude, each = ncol(xyz)),
+          ncol = ncol(xyz),
+          byrow = TRUE
+        )
     }
   }
 
