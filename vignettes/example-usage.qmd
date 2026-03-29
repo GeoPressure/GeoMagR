@@ -174,7 +174,7 @@ This reference map is normally computed automatically inside
 explicitly here for clarity.
 
 ```{r}
-ref_map = geomag_map_ref(tag)
+ref_map = GeoMagR:::geomag_map_ref(tag)
 ```
 
 ```{r}
