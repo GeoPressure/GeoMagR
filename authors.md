@@ -8,15 +8,15 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/Rafnuss/GeoMag/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/GeoPressure/GeoMagR/blob/main/inst/CITATION)
 
-Nussbaumer R (2025). *GeoMag: Geolocation by Magnetic Field*. R package
-version 0.1.0, <https://github.com/Rafnuss/GeoMag>.
+Nussbaumer R (2025). *GeoMagR: Geolocation by Magnetic Field*. R package
+version 0.1.0, <https://github.com/GeoPressure/GeoMagR>.
 
     @Manual{,
-      title = {GeoMag: Geolocation by Magnetic Field},
+      title = {GeoMagR: Geolocation by Magnetic Field},
       author = {Raphaël Nussbaumer},
       year = {2025},
       note = {R package version 0.1.0},
-      url = {https://github.com/Rafnuss/GeoMag},
+      url = {https://github.com/GeoPressure/GeoMagR},
     }

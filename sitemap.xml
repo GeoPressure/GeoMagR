@@ -1,11 +1,17 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
-<url><loc>https://raphaelnussbaumer.com/GeoMag/404.html</loc></url>
-<url><loc>https://raphaelnussbaumer.com/GeoMag/LICENSE.html</loc></url>
-<url><loc>https://raphaelnussbaumer.com/GeoMag/authors.html</loc></url>
-<url><loc>https://raphaelnussbaumer.com/GeoMag/index.html</loc></url>
-<url><loc>https://raphaelnussbaumer.com/GeoMag/reference/geomag_calib.html</loc></url>
-<url><loc>https://raphaelnussbaumer.com/GeoMag/reference/geomag_map.html</loc></url>
-<url><loc>https://raphaelnussbaumer.com/GeoMag/reference/index.html</loc></url>
-<url><loc>https://raphaelnussbaumer.com/GeoMag/reference/plot_mag.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/404.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/AGENTS.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/LICENSE.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/articles/getting-started.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/articles/index.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/articles/movement-model-magnetic-likelihood.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/authors.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/index.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/reference/geomag_calib.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/reference/geomag_map.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/reference/geomag_map_ref.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/reference/index.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/reference/plot_mag.html</loc></url>
+<url><loc>https://geopressure.org/GeoMagR/reference/tag_static.html</loc></url>
 </urlset>
 

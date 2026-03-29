@@ -1,18 +1,20 @@
-# GeoMag
+# GeoMagR
 
-**GeoMag** is an R package to estimate animal geolocation based on
+![GeoMagR logo](reference/figures/logo.png)
+
+**GeoMagR** is an R package to estimate animal geolocation based on
 triaxis magnetic field measurements, including:
 
-- **Magnetic calibration:** Correct magnetic distortion using in-situ or
-  in-vitro data.
+- **Magnetic calibration:** Correct magnetic distortion using field-data
+  or in-vitro data.
 - **Likelihood map estimation:** Compute spatial likelihood maps using
   the World Magnetic Model (WMM), comparing observed and known intensity
   and inclination.
 - **Interactive visualization:** Explore raw and calibrated data,
   ellipsoid fits, and 3D scatterplots.
 
-GeoMag is designed to work seamlessly with
-[GeoPressureR](https://raphaelnussbaumer.com/GeoPressureR), enabling
+GeoMagR is designed to work seamlessly with
+[GeoPressureR](https://geopressure.org/GeoPressureR), enabling
 high-resolution migratory track reconstruction using multi-sensor
 archival tags.
 
@@ -24,50 +26,31 @@ To install the latest version from GitHub:
 
 ``` r
 # install.packages("pak")
-pak::pkg_install("Rafnuss/GeoMag")
+pak::pkg_install("GeoPressure/GeoMagR")
 ```
 
 ------------------------------------------------------------------------
 
-## 🛠️ Example Usage
+## 📘 Vignettes
 
-``` r
-library(GeoMag)
-library(GeoPressureR)
+For full workflows, see the vignettes:
 
-withr::with_dir(system.file("extdata", package = "GeoMag"), {
-  # Create a GeoPressureR tag object (see GeoPressureR documentation)
-  tag <- tag_create("14DM")
-
-  # Label the tag
-  tag <- tag_label(tag)
-})
-
-# Calibrate the tag's magnetic data
-tag <- geomag_calib(tag)
-
-# Interactive 3D plot of calibrated magnetic field
-plot_mag(tag, type = "acceleration")
-plot_mag(tag, type = "magnetic")
-plot_mag(tag, type = "calib")
-
-# Compute the spatial likelihood map for each stationary period
-tag <- geomag_map(tag)
-
-plot(tag, "map_magnetic")
-```
+- [Getting Started with
+  GeoMagR](https://geopressure.org/GeoMagR/articles/getting-started.html)
+- [Movement Model with Magnetic
+  Likelihoods](https://geopressure.org/GeoMagR/articles/movement-model-magnetic-likelihood.html)
 
 ------------------------------------------------------------------------
 
 ## 📚 Citation
 
-If you use GeoMag in your research, please cite:
+If you use GeoMagR in your research, please cite:
 
-> Nussbaumer, R. (2025). GeoMag: Magnetic Field-Based Geolocation in R.
-> <https://github.com/Rafnuss/GeoMag>
+> Nussbaumer, R. (2025). GeoMagR: Geolocation by Magnetic Field.
+> <https://github.com/GeoPressure/GeoMagR>
 
 For citation information in R:
 
 ``` r
-citation("GeoMag")
+citation("GeoMagR")
 ```
