@@ -17,7 +17,7 @@
 #' (single value or per stap).
 #' @param sd_m_i Numeric. Standard deviation of stationary-period-specific noise of inclination
 #' error (single value or per stap).
-#' @param ref_map A `SpatRaster` with layers `intensity` and `inclinaison`. By default this is
+#' @param ref_map A `SpatRaster` with layers `intensity` and `inclination`. By default this is
 #' computed by `geomag_map_ref()`. Provide it if you've already computed it to save computational
 #' time.
 #' @param quiet Logical. If TRUE, suppresses progress messages.
@@ -37,7 +37,7 @@
 #'
 #' @examples
 #' library(GeoPressureR)
-#' withr::with_dir(system.file("extdata", package = "GeoMag"), {
+#' withr::with_dir(system.file("extdata", package = "GeoMagR"), {
 #'   tag <- tag_create("14DM", quiet = TRUE)
 #'   tag <- tag_label(tag, quiet = TRUE)
 #'   tag <- tag_set_map(tag,
@@ -69,15 +69,14 @@ geomag_map <- function(
   assertthat::assert_that(is.logical(compute_known))
   if (!inherits(ref_map, "SpatRaster")) {
     cli::cli_abort(c(
-      "{.var ref_map} must be a {.cls SpatRaster} with columns {.var lon}, {.var lat},
-      {.var intensity}, and {.var inclinaison}."
+      "{.var ref_map} must be a {.cls SpatRaster} with layers {.var intensity} and {.var inclination}."
     ))
   }
   g <- GeoPressureR::map_expand(
     tag$param$tag_set_map$extent,
     tag$param$tag_set_map$scale
   )
-  # Check ref_map is coheren with dimension of g
+  # Ensure reference raster matches tag map geometry.
   if (!all(dim(ref_map)[c(1, 2)] == c(g$dim[1], g$dim[2]))) {
     cli::cli_abort(c(
       "{.var ref_map} must have dimensions {.val {g$dim[1]}} x {.val {g$dim[2]}} (same as
@@ -104,43 +103,28 @@ geomag_map <- function(
   sd_m_i <- check_sd(sd_m_i, "sd_m_i")
   sd_m_f <- check_sd(sd_m_f, "sd_m_f")
 
-  mag <- geomag_clean(tag)
-  likelihood <- function(v, map, sd_m, sd_e) {
-    n <- length(v)
-    if (sd_m == 0) {
-      mse <- sapply(map, \(x) mean((x - v)^2))
-      l <- (1 / (2 * pi * sd_e^2))^(n / 2) * exp(-n / (2 * sd_e^2) * mse)
-    } else {
-      sum_Y_minus_X <- sapply(map, \(x) sum(x - v))
-      sum_Y_minus_X_squared <- sapply(map, \(x) sum((x - v)^2))
-      a <- n / sd_e^2 + 1 / sd_m^2
-      b <- sum_Y_minus_X / sd_e^2
-      ll <- -0.5 * n * log(2 * pi * sd_e^2) - 0.5 * log(2 * pi * sd_m^2)
-      ll <- ll + 0.5 * log(2 * pi / a)
-      ll <- ll - (0.5 / sd_e^2) * sum_Y_minus_X_squared
-      ll <- ll + (b^2 / (2 * a))
-      l <- exp(ll - max(ll))
-    }
-    l <- matrix(l, nrow = dim(map)[1], ncol = dim(map)[2])
-    l[tag$map_pressure_mse$mask_water] <- NA
-    l
-  }
+  # Flag samples eligible for intensity and inclination likelihoods.
+  tag$magnetic$clean_F <- clean_F(tag$magnetic)
+  tag$magnetic$clean_I <- clean_I(tag$magnetic)
+  mag <- tag$magnetic
 
+  ref_intensity <- as.matrix(ref_map$intensity, wide = TRUE)
+  ref_inclination <- as.matrix(ref_map$inclination, wide = TRUE)
   map_mag <- vector("list", nrow(tag$stap))
   map_mag_f <- vector("list", nrow(tag$stap))
   map_mag_i <- vector("list", nrow(tag$stap))
 
   for (istap in seq_len(nrow(tag$stap))) {
-    mag_istap <- mag[istap == mag$stap_id, ]
+    mag_i <- mag[istap == mag$stap_id, ]
     map_mag_f[[istap]] <- likelihood(
-      mag_istap$F,
-      as.matrix(ref_map$intensity, wide = TRUE),
+      mag_i$F[mag_i$clean_F],
+      ref_intensity,
       sd_m_f[istap],
       sd_e_f[istap]
     )
     map_mag_i[[istap]] <- likelihood(
-      mag_istap$I * 180 / pi,
-      as.matrix(ref_map$inclinaison, wide = TRUE),
+      mag_i$I[mag_i$clean_I] * 180 / pi,
+      ref_inclination,
       sd_m_i[istap],
       sd_e_i[istap]
     )
@@ -150,10 +134,11 @@ geomag_map <- function(
   # Override likelihood at known location if requested
   if (!compute_known) {
     for (stap_id in tag$stap$stap_id[!is.na(tag$stap$known_lat)]) {
+      idx <- match(stap_id, tag$stap$stap_id)
       zero_matrix <- matrix(0, nrow = nrow(ref_map), ncol = ncol(ref_map))
       cells <- terra::cellFromXY(
         ref_map,
-        cbind(tag$stap$known_lon[stap_id], tag$stap$known_lat[stap_id])
+        cbind(tag$stap$known_lon[idx], tag$stap$known_lat[idx])
       )
       rc <- terra::rowColFromCell(ref_map, cells)
       zero_matrix[cbind(rc[, 1], rc[, 2])] <- 1
@@ -203,7 +188,7 @@ geomag_map <- function(
 #'
 #' @param tag A GeoPressureR tag object.
 #' @param quiet Logical. If TRUE, suppresses progress messages.
-#' @return A list of two terra raster layers: `intensity` (Gauss) and `inclinaison` (degrees).
+#' @return A list of two terra raster layers: `intensity` (Gauss) and `inclination` (degrees).
 #' @noRd
 geomag_map_ref <- function(tag, quiet = FALSE) {
   height <- -(288.15 / -0.0065) *
@@ -253,31 +238,74 @@ geomag_map_ref <- function(tag, quiet = FALSE) {
     extent = tag$param$tag_set_map$extent,
     crs = "epsg:4326"
   )
-  names(map_i) <- "inclinaison"
+  names(map_i) <- "inclination"
 
   c(map_f, map_i)
 }
 
-#' Clean and Filter Magnetic Data for Likelihood Calculation
-#'
-#' @description
-#' Cleans and filters the magnetic data prior to likelihood map computation:
-#' - Assigns stap_id if missing.
-#' - Removes points outside valid magnetic field range.
-#' - Removes outliers per stationary period for both intensity and inclination.
-#'
-#' @param tag A GeoPressureR tag object.
-#' @return A filtered data.frame of magnetic observations.
-#' @noRd
-geomag_clean <- function(tag) {
-  mag <- tag$magnetic
-  if (!("stap_id" %in% names(mag))) {
-    mag$stap_id <- GeoPressureR::find_stap(tag$stap, mag$date)
+clean_I <- function(mag) {
+  keep <- rep(TRUE, nrow(mag))
+
+  # Keep only rows assigned to stationary periods.
+  if ("stap_id" %in% names(mag)) {
+    keep <- keep & mag$stap_id == round(mag$stap_id)
   }
-  mag <- mag[mag$F > 0.25 & mag$F < 0.65, ]
-  G <- round(mag$stap_id)
-  outlier_F <- unsplit(lapply(split(mag$F, G), is_outlier), G)
-  outlier_I <- unsplit(lapply(split(mag$I, G), is_outlier), G)
-  mag <- mag[!outlier_F & !outlier_I, ]
-  mag
+
+  # Inclination is orientation-sensitive, so keep static samples only.
+  if ("is_static" %in% names(mag)) {
+    keep <- keep & mag$is_static
+  }
+
+  # Apply robust outlier filtering within each stationary period.
+  if ("stap_id" %in% names(mag) && !all(mag$stap_id == 1)) {
+    keep_idx <- which(keep & !is.na(mag$I))
+    G = round(mag$stap_id[keep_idx])
+    outlier <- unsplit(lapply(split(mag$I[keep_idx], G), is_outlier), G)
+    keep[keep_idx] <- keep[keep_idx] & !outlier
+  }
+
+  keep
+}
+
+clean_F <- function(mag) {
+  keep <- rep(TRUE, nrow(mag))
+
+  # Restrict to physically plausible field intensity.
+  keep <- keep & mag$F > 0.25 & mag$F < 0.65
+
+  # Keep only rows assigned to stationary periods.
+  if ("stap_id" %in% names(mag)) {
+    keep <- keep & mag$stap_id == round(mag$stap_id)
+  }
+
+  # Apply robust outlier filtering within each stationary period.
+  if ("stap_id" %in% names(mag) && !all(mag$stap_id == 1)) {
+    keep_idx <- which(keep & !is.na(mag$F))
+    G = round(mag$stap_id[keep_idx])
+    outlier <- unsplit(lapply(split(mag$F[keep_idx], G), is_outlier), G)
+    keep[keep_idx] <- keep[keep_idx] & !outlier
+  }
+
+  keep
+}
+
+
+likelihood <- function(v, map, sd_m, sd_e) {
+  n <- length(v)
+  if (sd_m == 0) {
+    mse <- sapply(map, \(x) mean((x - v)^2))
+    l <- (1 / (2 * pi * sd_e^2))^(n / 2) * exp(-n / (2 * sd_e^2) * mse)
+  } else {
+    sum_Y_minus_X <- sapply(map, \(x) sum(x - v))
+    sum_Y_minus_X_squared <- sapply(map, \(x) sum((x - v)^2))
+    a <- n / sd_e^2 + 1 / sd_m^2
+    b <- sum_Y_minus_X / sd_e^2
+    ll <- -0.5 * n * log(2 * pi * sd_e^2) - 0.5 * log(2 * pi * sd_m^2)
+    ll <- ll + 0.5 * log(2 * pi / a)
+    ll <- ll - (0.5 / sd_e^2) * sum_Y_minus_X_squared
+    ll <- ll + (b^2 / (2 * a))
+    l <- exp(ll - max(ll))
+  }
+  l <- matrix(l, nrow = dim(map)[1], ncol = dim(map)[2])
+  l
 }
