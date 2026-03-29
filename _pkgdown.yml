@@ -8,5 +8,6 @@ reference:
     contents:
       - geomag_calib
       - geomag_map
+      - geomag_map_ref
       - plot_mag
       - tag_static
