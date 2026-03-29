@@ -59,4 +59,4 @@ If you use GeoMagR in your research, please cite:
 > Nussbaumer, R. (2025). GeoMagR: Geolocation by Magnetic Field. Zenodo. [https://doi.org/10.5281/zenodo.19217183](https://doi.org/10.5281/zenodo.19217183). Available at: [https://github.com/GeoPressure/GeoMagR](https://github.com/GeoPressure/GeoMagR)
 
 
-For citation information in R with `r citation("GeoMagR")`
+For citation information in R with `citation("GeoMagR")`

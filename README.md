@@ -58,8 +58,4 @@ If you use GeoMagR in your research, please cite:
 > <https://doi.org/10.5281/zenodo.19217183>. Available at:
 > <https://github.com/GeoPressure/GeoMagR>
 
-For citation information in R with list(title = “GeoMagR: Geolocation by
-Magnetic Field”, author = list(list(given = “Raphaël”, family =
-“Nussbaumer”, role = c(“aut”, “cre”), email = “<rafnuss@gmail.com>”,
-comment = NULL)), year = “2025”, note = “R package version 0.1.0”, url =
-“<https://github.com/GeoPressure/GeoMagR>”)
+For citation information in R with `citation("GeoMagR")`
