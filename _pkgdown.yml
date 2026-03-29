@@ -9,3 +9,4 @@ reference:
       - geomag_calib
       - geomag_map
       - plot_mag
+      - tag_static

@@ -3,3 +3,4 @@
 export(geomag_calib)
 export(geomag_map)
 export(plot_mag)
+export(tag_static)

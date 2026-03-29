@@ -9,6 +9,8 @@ geomag_calib(
   calib_data = NULL,
   calib_method = NULL,
   rm_outlier = TRUE,
+  static_thr_hard = 0.1,
+  static_thr_outlier = 3,
   quiet = FALSE
 )
 }
@@ -17,7 +19,7 @@ geomag_calib(
 
 \item{calib_data}{Logical, character, or \code{NULL}.
 If \code{TRUE}, uses calibration data from \verb{magCalib/} subfolder.
-If \code{FALSE}, calibrates using in situ data.
+If \code{FALSE}, calibrates using field-data calibration.
 If a character path, uses calibration data from the specified directory.
 If \code{NULL}, auto-detects calibration folder.}
 
@@ -25,6 +27,12 @@ If \code{NULL}, auto-detects calibration folder.}
 \code{"near-sphere"}, \code{"sphere_stap"}, or \code{"ellipse_stap"}. If \code{NULL}, chosen automatically.}
 
 \item{rm_outlier}{Logical. If \code{TRUE}, removes outliers from calibration data (recommended).}
+
+\item{static_thr_hard}{Numeric. Hard threshold around 1 g used when classifying static
+samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
+
+\item{static_thr_outlier}{Numeric. MAD threshold used to remove outliers among candidate static
+samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
 
 \item{quiet}{Logical. If \code{TRUE}, suppresses progress messages.}
 }
@@ -36,8 +44,8 @@ Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contain
 \item \code{magnetic_x}, \code{magnetic_y}, \code{magnetic_z}: Raw magnetic data
 \item \code{is_static}: Scaled MAD of acceleration (0 = static, >1 = movement)
 \item \code{pitch}, \code{roll}: Orientation angles (radian)
-\item \code{acceleration_xp}, \code{acceleration_yp}, \code{acceleration_zp}: Projected acceleration in NED frame
-\item \code{is_outlier}: Logical, marks outliers in magnetic data
+\item \code{acceleration_xp}, \code{acceleration_yp}, \code{acceleration_zp}: Projected acceleration in NED
+frame
 \item \code{magnetic_xc}, \code{magnetic_yc}, \code{magnetic_zc}: Calibrated magnetic data
 \item \code{magnetic_xcp}, \code{magnetic_ycp}, \code{magnetic_zcp}: Calibrated magnetic data projected in NED
 frame
@@ -51,13 +59,11 @@ parameters (\code{tag$param$geomag_calib}).
 }
 \description{
 Performs tilt compensation and magnetic calibration for 3-axis sensor data, with support for
-in situ and in vitro calibration routines, outlier removal, and computation of orientation and
+field-data and in vitro calibration routines, outlier removal, and computation of orientation and
 field parameters. This function is designed for use with \code{GeoPressureR} tag objects and can
 utilize calibration datasets if available.
 \subsection{Workflow}{
 \enumerate{
-\item \strong{Determine static/movement states:}
-Classify each data point as static or moving by evaluating acceleration signals.
 \item \strong{Magnetic Data Calibration:}
 \itemize{
 \item Select calibration data source (raw or from calibration dataset).
@@ -77,16 +83,9 @@ Classify each data point as static or moving by evaluating acceleration signals.
 }
 }
 }
-\section{Details}{
-
-This function is part of the \code{GeoMag} package and is intended for use with animal-attached tags
-that record magnetic and acceleration data. It supports several calibration workflows and robust
-outlier detection.
-}
-
 \examples{
 library(GeoPressureR)
-withr::with_dir(system.file("extdata", package = "GeoMag"), {
+withr::with_dir(system.file("extdata", package = "GeoMagR"), {
   tag <- tag_create("14DM", quiet = TRUE)
   tag <- tag_label(tag, quiet = TRUE)
   tag <- geomag_calib(tag, quiet = TRUE)

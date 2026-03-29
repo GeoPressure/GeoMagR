@@ -34,7 +34,7 @@ value or one per stap).}
 \item{sd_m_i}{Numeric. Standard deviation of stationary-period-specific noise of inclination
 error (single value or per stap).}
 
-\item{ref_map}{A \code{SpatRaster} with layers \code{intensity} and \code{inclinaison}. By default this is
+\item{ref_map}{A \code{SpatRaster} with layers \code{intensity} and \code{inclination}. By default this is
 computed by \code{geomag_map_ref()}. Provide it if you've already computed it to save computational
 time.}
 
@@ -61,7 +61,7 @@ reference map.
 }
 \examples{
 library(GeoPressureR)
-withr::with_dir(system.file("extdata", package = "GeoMag"), {
+withr::with_dir(system.file("extdata", package = "GeoMagR"), {
   tag <- tag_create("14DM", quiet = TRUE)
   tag <- tag_label(tag, quiet = TRUE)
   tag <- tag_set_map(tag,

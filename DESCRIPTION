@@ -23,12 +23,21 @@ Imports:
     viridisLite,
     scico,
     ggplot2,
+    htmlwidgets,
     stats,
 Suggests:
+    spelling,
     withr,
     testthat,
+    quarto,
+    knitr,
+    rmarkdown,
+    maps,
+    pkgload
 Remotes: 
     GeoPressure/GeoPressureR
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+VignetteBuilder: quarto
+Language: en-US
