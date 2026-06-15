@@ -103,7 +103,7 @@ geomag_map <- function(
     ))
   }
 
-  check_sd <- function(x, name) {
+  check_sd <- function(x, name, allow_zero) {
     assertthat::assert_that(is.numeric(x))
     if (length(x) == 1) {
       x <- rep(x, times = nrow(tag$stap))
@@ -113,13 +113,13 @@ geomag_map <- function(
         ">" = "{.var {name}} must be length {.val 1} or {.val {nrow(tag$stap)}}."
       ))
     }
-    assertthat::assert_that(all(x >= 0))
+    assertthat::assert_that(all(if (allow_zero) x >= 0 else x > 0))
     x
   }
-  sd_e_i <- check_sd(sd_e_i, "sd_e_i")
-  sd_e_f <- check_sd(sd_e_f, "sd_e_f")
-  sd_m_i <- check_sd(sd_m_i, "sd_m_i")
-  sd_m_f <- check_sd(sd_m_f, "sd_m_f")
+  sd_e_i <- check_sd(sd_e_i, "sd_e_i", FALSE)
+  sd_e_f <- check_sd(sd_e_f, "sd_e_f", FALSE)
+  sd_m_i <- check_sd(sd_m_i, "sd_m_i", TRUE)
+  sd_m_f <- check_sd(sd_m_f, "sd_m_f", TRUE)
 
   # Flag samples eligible for intensity and inclination likelihoods.
   tag$magnetic$clean_F <- clean_F(tag$magnetic)
