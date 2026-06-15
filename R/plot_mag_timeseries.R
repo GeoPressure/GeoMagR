@@ -6,6 +6,13 @@ plot_mag_timeseries <- function(tag, cols, stap_id, path) {
     ))
   }
   mag <- tag$magnetic
+  has_any_f <- "F" %in% names(mag) && any(is.finite(mag$F))
+  if (!has_any_f) {
+    cli::cli_alert_warning(
+      "No finite magnetic intensity ({.val F}) available for {.val timeseries} plot."
+    )
+    return(invisible(NULL))
+  }
   mag$clean_F <- clean_F(mag)
   mag$clean_I <- clean_I(mag)
 
@@ -153,7 +160,7 @@ plot_mag_timeseries <- function(tag, cols, stap_id, path) {
       labeller = ggplot2::labeller(
         variable = c(
           I = "inclination (\u00B0)",
-          F = "Intensity (nT)"
+          F = "Intensity (Gauss)"
         )
       )
     ) +

@@ -195,6 +195,16 @@ geomag_map <- function(
   tag$param$geomag_map$sd_e_i <- sd_e_i
   tag$param$geomag_map$sd_m_f <- sd_m_f
   tag$param$geomag_map$sd_m_i <- sd_m_i
+  tag$param$geomag_map$compute_known <- compute_known
+  ref_param <- attr(ref_map, "geomag_ref")
+  if (is.null(ref_param)) {
+    ref_param <- list(
+      time = NA,
+      height = NA_real_,
+      wmm_version = as.character(utils::packageVersion("wmm"))
+    )
+  }
+  tag$param$geomag_map$ref_map <- ref_param
   tag
 }
 
@@ -258,7 +268,13 @@ geomag_map_ref <- function(tag, quiet = FALSE) {
   )
   names(map_i) <- "inclination"
 
-  c(map_f, map_i)
+  out <- c(map_f, map_i)
+  attr(out, "geomag_ref") <- list(
+    time = time,
+    height = height,
+    wmm_version = as.character(utils::packageVersion("wmm"))
+  )
+  out
 }
 
 clean_I <- function(mag) {
@@ -266,20 +282,33 @@ clean_I <- function(mag) {
 
   # Keep only rows assigned to stationary periods.
   if ("stap_id" %in% names(mag)) {
-    keep <- keep & mag$stap_id == round(mag$stap_id)
+    keep <- keep & !is.na(mag$stap_id) & mag$stap_id == round(mag$stap_id)
   }
 
   # Inclination is orientation-sensitive, so keep static samples only.
   if ("is_static" %in% names(mag)) {
-    keep <- keep & mag$is_static
+    keep <- keep & !is.na(mag$is_static) & mag$is_static
   }
 
   # Apply robust outlier filtering within each stationary period.
-  if ("stap_id" %in% names(mag) && !all(mag$stap_id == 1)) {
-    keep_idx <- which(keep & !is.na(mag$I))
-    G = round(mag$stap_id[keep_idx])
-    outlier <- unsplit(lapply(split(mag$I[keep_idx], G), is_outlier), G)
-    keep[keep_idx] <- keep[keep_idx] & !outlier
+  has_stap_groups <- "stap_id" %in%
+    names(mag) &&
+    !all(is.na(mag$stap_id)) &&
+    !all(stats::na.omit(mag$stap_id) == 1)
+
+  if (has_stap_groups) {
+    keep_idx <- which(keep & is.finite(mag$I))
+    if (length(keep_idx) > 0) {
+      G <- round(mag$stap_id[keep_idx])
+      valid <- !is.na(G)
+      if (any(valid)) {
+        outlier <- unsplit(
+          lapply(split(mag$I[keep_idx][valid], G[valid]), is_outlier),
+          G[valid]
+        )
+        keep[keep_idx[valid]] <- keep[keep_idx[valid]] & !outlier
+      }
+    }
   }
 
   keep
@@ -289,25 +318,36 @@ clean_F <- function(mag) {
   keep <- rep(TRUE, nrow(mag))
 
   # Restrict to physically plausible field intensity.
-  keep <- keep & mag$F > 0.25 & mag$F < 0.65
+  keep <- keep & is.finite(mag$F) & mag$F > 0.25 & mag$F < 0.65
 
   # Keep only rows assigned to stationary periods.
   if ("stap_id" %in% names(mag)) {
-    keep <- keep & mag$stap_id == round(mag$stap_id)
+    keep <- keep & !is.na(mag$stap_id) & mag$stap_id == round(mag$stap_id)
   }
 
   # Apply robust outlier filtering within each stationary period.
-  if ("stap_id" %in% names(mag) && !all(mag$stap_id == 1)) {
-    keep_idx <- which(keep & !is.na(mag$F))
-    G = round(mag$stap_id[keep_idx])
-    outlier <- unsplit(lapply(split(mag$F[keep_idx], G), is_outlier), G)
-    keep[keep_idx] <- keep[keep_idx] & !outlier
+  has_stap_groups <- "stap_id" %in%
+    names(mag) &&
+    !all(is.na(mag$stap_id)) &&
+    !all(stats::na.omit(mag$stap_id) == 1)
+
+  if (has_stap_groups) {
+    keep_idx <- which(keep)
+    if (length(keep_idx) > 0) {
+      G <- round(mag$stap_id[keep_idx])
+      valid <- !is.na(G)
+      if (any(valid)) {
+        outlier <- unsplit(
+          lapply(split(mag$F[keep_idx][valid], G[valid]), is_outlier),
+          G[valid]
+        )
+        keep[keep_idx[valid]] <- keep[keep_idx[valid]] & !outlier
+      }
+    }
   }
 
   keep
 }
-
-
 likelihood <- function(v, map, sd_m, sd_e) {
   n <- length(v)
   if (sd_m == 0) {
