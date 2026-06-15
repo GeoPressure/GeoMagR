@@ -80,6 +80,11 @@ geomag_map <- function(
 ) {
   GeoPressureR::tag_assert(tag, "setmap")
   assertthat::assert_that(is.logical(compute_known))
+  if (!isTRUE(all(tag$stap$stap_id == seq_len(nrow(tag$stap))))) {
+    cli::cli_abort(
+      "{.field tag$stap$stap_id} must be consecutive integers starting at 1."
+    )
+  }
   if (!inherits(ref_map, "SpatRaster")) {
     cli::cli_abort(c(
       "{.var ref_map} must be a {.cls SpatRaster} with layers {.var intensity} and {.var inclination}."
