@@ -3,7 +3,7 @@ library(GeoMagR)
 library(testthat)
 
 test_that("plot_mag covers the updated 3D branches", {
-  setwd(system.file("extdata", package = "GeoMagR"))
+  withr::local_dir(system.file("extdata", package = "GeoMagR"))
 
   tag <- GeoPressureR::tag_create("14DM", quiet = TRUE)
   tag <- GeoPressureR::tag_label(tag, quiet = TRUE)
@@ -36,7 +36,7 @@ test_that("plot_mag covers the updated 3D branches", {
 })
 
 test_that("plot_mag works without stap_id in magnetic and mag_calib", {
-  setwd(system.file("extdata", package = "GeoMagR"))
+  withr::local_dir(system.file("extdata", package = "GeoMagR"))
 
   tag <- GeoPressureR::tag_create("14DM", quiet = TRUE)
   tag <- GeoPressureR::tag_label(tag, quiet = TRUE)
