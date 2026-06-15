@@ -7,7 +7,6 @@
 ^pkgdown$
 ^LICENSE\.md$
 ^README\.Rmd$
-^vignettes$
 ^\.github$
 ^codecov\.yml$
 ^GeoPressureR.Rproj$

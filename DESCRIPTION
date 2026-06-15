@@ -6,8 +6,8 @@ Description:
 Authors@R: 
     person("Raphaël", "Nussbaumer", , "rafnuss@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8185-1020"))
-Version: 0.2.0.9000
 License: MIT + file LICENSE
+Version: 0.2.0
 Depends: 
     R (>= 4.1.0)
 Imports: 
@@ -32,12 +32,13 @@ Suggests:
     quarto,
     knitr,
     rmarkdown,
+    rnaturalearthdata,
     maps,
     pkgload
 Remotes: 
     GeoPressure/GeoPressureR
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
+RoxygenNote: 8.0.0
 VignetteBuilder: quarto
 Language: en-US
