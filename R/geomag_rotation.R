@@ -40,7 +40,7 @@ rot <- function(x, pitch, yaw) {
   cc <- cos(yaw)
   ss <- sin(yaw)
   rz <- matrix(
-    c(cc, 0, ss, 0, 1, 0, -ss, 0, cc),
+    c(cc, ss, 0, -ss, cc, 0, 0, 0, 1),
     nrow = 3,
     ncol = 3,
     byrow = FALSE
