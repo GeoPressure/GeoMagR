@@ -350,9 +350,11 @@ clean_F <- function(mag) {
 }
 likelihood <- function(v, map, sd_m, sd_e) {
   n <- length(v)
+  if (n == 0) {
+    return(matrix(1, nrow = dim(map)[1], ncol = dim(map)[2]))
+  }
   if (sd_m == 0) {
-    mse <- sapply(map, \(x) mean((x - v)^2))
-    l <- (1 / (2 * pi * sd_e^2))^(n / 2) * exp(-n / (2 * sd_e^2) * mse)
+    ll <- -sapply(map, \(x) sum((x - v)^2)) / (2 * sd_e^2)
   } else {
     sum_Y_minus_X <- sapply(map, \(x) sum(x - v))
     sum_Y_minus_X_squared <- sapply(map, \(x) sum((x - v)^2))
@@ -362,8 +364,8 @@ likelihood <- function(v, map, sd_m, sd_e) {
     ll <- ll + 0.5 * log(2 * pi / a)
     ll <- ll - (0.5 / sd_e^2) * sum_Y_minus_X_squared
     ll <- ll + (b^2 / (2 * a))
-    l <- exp(ll - max(ll))
   }
+  l <- exp(ll - max(ll))
   l <- matrix(l, nrow = dim(map)[1], ncol = dim(map)[2])
   l
 }
