@@ -11,7 +11,8 @@ geomag_calib(
   rm_outlier = TRUE,
   static_thr_hard = 0.1,
   static_thr_outlier = 3,
-  quiet = FALSE
+  quiet = FALSE,
+  calib_thr_extreme = 1
 )
 }
 \arguments{
@@ -35,6 +36,9 @@ samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
 samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
 
 \item{quiet}{Logical. If \code{TRUE}, suppresses progress messages.}
+
+\item{calib_thr_extreme}{Numeric. Upper threshold on the raw magnetic vector norm
+(\code{sqrt(x^2 + y^2 + z^2)}) used to remove extreme calibration samples.}
 }
 \value{
 Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contains:

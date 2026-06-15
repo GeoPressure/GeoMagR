@@ -33,6 +33,8 @@
 #' @param static_thr_outlier Numeric. MAD threshold used to remove outliers among candidate static
 #'   samples. Passed to [tag_static()].
 #' @param quiet Logical. If `TRUE`, suppresses progress messages.
+#' @param calib_thr_extreme Numeric. Upper threshold on the raw magnetic vector norm
+#'   (`sqrt(x^2 + y^2 + z^2)`) used to remove extreme calibration samples.
 #'
 #' @return Modified `GeoPressureR` tag object. The `$magnetic` data frame contains:
 #'   - `date`: Timestamp (POSIXct or numeric)
@@ -69,7 +71,8 @@ geomag_calib <- function(
   rm_outlier = TRUE,
   static_thr_hard = 0.1,
   static_thr_outlier = 3,
-  quiet = FALSE
+  quiet = FALSE,
+  calib_thr_extreme = 1
 ) {
   GeoPressureR::tag_assert(tag, "magnetic")
 
@@ -129,7 +132,7 @@ geomag_calib <- function(
 
   # Filter calibration samples
   if (rm_outlier) {
-    mag_calib <- geomag_calib_rm(mag_calib, tag)
+    mag_calib <- geomag_calib_rm(mag_calib, tag, calib_thr_extreme)
   }
   mag_calib <- mag_calib[
     stats::complete.cases(
@@ -216,6 +219,9 @@ geomag_calib <- function(
     FALSE
   )
   tag$param$geomag_calib$rm_outlier <- rm_outlier
+  tag$param$geomag_calib$static_thr_hard <- static_thr_hard
+  tag$param$geomag_calib$static_thr_outlier <- static_thr_outlier
+  tag$param$geomag_calib$calib_thr_extreme <- calib_thr_extreme
   attr(mag, "geomag_calib") <- NULL
 
   # Save processed data
@@ -227,12 +233,12 @@ geomag_calib <- function(
 
 
 #' @noRd
-geomag_calib_rm <- function(mag_calib, tag) {
+geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
   # Remove values with excessive magnetic field intensity
   mn <- sqrt(
     mag_calib$magnetic_x^2 + mag_calib$magnetic_y^2 + mag_calib$magnetic_z^2
   )
-  mag_calib <- mag_calib[mn < 1, ]
+  mag_calib <- mag_calib[mn < calib_thr_extreme, ]
   if (nrow(mag_calib) == 0) {
     cli::cli_abort(c(
       "x" = "No calibration data left after removing extreme values.",
