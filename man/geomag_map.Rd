@@ -57,7 +57,20 @@ Estimates a likelihood map for each stationary period based on observed magnetic
 \details{
 The tag must already contain calibrated magnetic data and map metadata created with
 \code{tag_set_map()}. \code{geomag_map()} uses the tag's pressure record to estimate altitude for the WMM
-reference map.
+reference map. Stationary-period identifiers must be consecutive integers from 1 to the number
+of stationary periods.
+
+For an observed magnetic quantity \eqn{y_j} and WMM value \eqn{x_s} at location \eqn{s}, the
+observation model is \eqn{y_j = x_s + b + e_j}, with observation error
+\eqn{e_j \sim N(0, \sigma_e^2)} and stationary-period error
+\eqn{b \sim N(0, \sigma_m^2)}. The likelihood integrates over \eqn{b} and is returned relative
+to its maximum value. When no valid observations are available, an uninformative all-one map is
+returned.
+
+Intensity values and their standard deviations (\code{sd_e_f}, \code{sd_m_f}) are in Gauss. Inclination
+values and their standard deviations (\code{sd_e_i}, \code{sd_m_i}) are in degrees. Sensitivity analyses
+should vary both error components because larger values broaden the likelihood surface and reduce
+the spatial information contributed by magnetic data.
 }
 \examples{
 library(GeoPressureR)

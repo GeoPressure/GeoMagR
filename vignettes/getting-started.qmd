@@ -206,6 +206,18 @@ ggplot(ref_map_df, aes(x = x, y = y, fill = intensity)) +
 The likelihood computation requires four standard deviations that control the expected measurement
 error and uncertainty.
 
+For an observation \(y_j\) and the WMM value \(x_s\) at candidate location \(s\), GeoMagR uses
+
+\[
+y_j = x_s + b + e_j,\qquad
+e_j \sim \mathcal{N}(0, \sigma_e^2),\qquad
+b \sim \mathcal{N}(0, \sigma_m^2).
+\]
+
+The observation error \(\sigma_e\) describes variation among individual measurements, while the
+stationary-period error \(\sigma_m\) describes uncertainty shared by all observations from that
+period. Intensity values and errors are in Gauss; inclination values and errors are in degrees.
+
 ```{r}
 tag <- geomag_map(
   tag,
@@ -217,6 +229,11 @@ tag <- geomag_map(
   ref_map = ref_map
 )
 ```
+
+The defaults provide a practical starting point, but results should be checked with a sensitivity
+analysis. Increasing either standard deviation broadens the likelihood surface and reduces the
+influence of magnetic data. Compare trajectories across plausible lower and upper values, especially
+when calibration quality or logger orientation is uncertain.
 
 The result is a spatial likelihood surface for each stationary period.
 
