@@ -1,7 +1,7 @@
-# --------------------------------------------
-# CITATION file created with {cffr} R package
+# ------------------------------------------------
+# CITATION.cff file created with {cffr} R package
 # See also: https://docs.ropensci.org/cffr/
-# --------------------------------------------
+# ------------------------------------------------
  
 cff-version: 1.2.0
 message: 'To cite package "GeoMagR" in publications use:'
@@ -9,6 +9,7 @@ type: software
 license: MIT
 title: 'GeoMagR: Geolocation by Magnetic Field'
 version: 0.2.0
+doi: 10.1111/2041-210x.70355
 abstract: Provides methods to produce likelihood maps of position based on magnetic
   field data, including calibration, outlier removal, and interactive 3D visualization.
   Designed for use with animal geolocation workflows and fully compatible with the
@@ -20,18 +21,36 @@ authors:
   email: rafnuss@gmail.com
   orcid: https://orcid.org/0000-0002-8185-1020
 preferred-citation:
-  type: manual
-  title: 'GeoMagR: Geolocation by Magnetic Field'
+  type: article
+  title: Geolocation with a magnetic sensor
   authors:
   - family-names: Nussbaumer
     given-names: Raphaël
     email: rafnuss@gmail.com
     orcid: https://orcid.org/0000-0002-8185-1020
-  year: '2025'
-  notes: R package version 0.2.0
-  url: https://github.com/GeoPressure/GeoMagR
-  doi: 10.5281/zenodo.19217183
-doi: 10.5281/zenodo.19217183
+  - family-names: Bächler
+    given-names: Elias
+  - family-names: Liechti
+    given-names: Felix
+  - family-names: Briedis
+    given-names: Martins
+  - family-names: Dufour
+    given-names: Philippe
+  - family-names: Rime
+    given-names: Yoann
+  - family-names: Capilla-Lasheras
+    given-names: Pablo
+  - family-names: Wong
+    given-names: Jean B.
+  - family-names: Holland
+    given-names: Richard
+  - family-names: Helm
+    given-names: Barbara
+  journal: Methods in Ecology and Evolution
+  year: '2026'
+  volume: '00'
+  doi: 10.1111/2041-210x.70355
+  start: 1-13
 repository-code: https://github.com/GeoPressure/GeoMagR
 url: https://geopressure.org/GeoMagR/
 contact:
@@ -40,16 +59,29 @@ contact:
   email: rafnuss@gmail.com
   orcid: https://orcid.org/0000-0002-8185-1020
 references:
+- type: manual
+  title: 'GeoMagR: Geolocation by Magnetic Field'
+  authors:
+  - family-names: Nussbaumer
+    given-names: Raphaël
+    email: rafnuss@gmail.com
+  year: '2025'
+  notes: R package version 0.2.0
+  url: https://github.com/GeoPressure/GeoMagR
+  doi: 10.5281/zenodo.19217183
 - type: software
   title: 'R: A Language and Environment for Statistical Computing'
   notes: Depends
   url: https://www.R-project.org/
   authors:
   - name: R Core Team
+    website: https://ror.org/02zz1nj61
   institution:
     name: R Foundation for Statistical Computing
+    website: https://ror.org/05qewa988
     address: Vienna, Austria
   year: '2026'
+  doi: 10.32614/R.manuals
   version: '>= 4.1.0'
 - type: software
   title: cli
@@ -307,26 +339,13 @@ references:
   notes: Imports
   authors:
   - name: R Core Team
+    website: https://ror.org/02zz1nj61
   institution:
     name: R Foundation for Statistical Computing
+    website: https://ror.org/05qewa988
     address: Vienna, Austria
   year: '2026'
-- type: software
-  title: spelling
-  abstract: 'spelling: Tools for Spell Checking in R'
-  notes: Suggests
-  url: https://ropensci.r-universe.dev/spelling
-  repository: https://CRAN.R-project.org/package=spelling
-  authors:
-  - family-names: Ooms
-    given-names: Jeroen
-    email: jeroenooms@gmail.com
-    orcid: https://orcid.org/0000-0002-4035-0289
-  - family-names: Hester
-    given-names: Jim
-    email: james.hester@rstudio.com
-  year: '2026'
-  doi: 10.32614/CRAN.package.spelling
+  doi: 10.32614/R.manuals
 - type: software
   title: withr
   abstract: 'withr: Run Code ''With'' Temporarily Modified Global State'
@@ -439,6 +458,26 @@ references:
   year: '2026'
   doi: 10.32614/CRAN.package.rmarkdown
 - type: software
+  title: rnaturalearthdata
+  abstract: 'rnaturalearthdata: World Vector Map Data from Natural Earth Used in ''rnaturalearth'''
+  notes: Suggests
+  url: https://docs.ropensci.org/rnaturalearthdata/
+  repository: https://CRAN.R-project.org/package=rnaturalearthdata
+  authors:
+  - family-names: South
+    given-names: Andy
+    email: southandy@gmail.com
+    orcid: https://orcid.org/0000-0003-4051-6135
+  - family-names: Michael
+    given-names: Schramm
+    email: mpschramm@gmail.com
+  - family-names: Massicotte
+    given-names: Philippe
+    email: pmassicotte@hotmail.com
+    orcid: https://orcid.org/0000-0002-5919-4116
+  year: '2026'
+  doi: 10.32614/CRAN.package.rnaturalearthdata
+- type: software
   title: maps
   abstract: 'maps: Draw Geographical Maps'
   notes: Suggests
@@ -477,3 +516,4 @@ references:
     email: lionel@posit.co
   year: '2026'
   doi: 10.32614/CRAN.package.pkgload
+

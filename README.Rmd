@@ -54,9 +54,11 @@ For full workflows, see the vignettes:
 
 ## 📚 Citation
 
-If you use GeoMagR in your research, please cite:
+If you use GeoMagR in your research, cite both the methods paper for the geolocation approach and the GeoMagR package
+
+> Nussbaumer, R., Bächler, E., Liechti, F., Briedis, M., Dufour, P., Rime, Y., Capilla-Lasheras, P., Wong, J. B., Holland, R., & Helm, B. (2026). Geolocation with a magnetic sensor. Methods in Ecology and Evolution, 00, 1–13. [https://doi.org/10.1111/2041-210x.70355](https://doi.org/10.1111/2041-210x.70355)
 
 > Nussbaumer, R. (2025). GeoMagR: Geolocation by Magnetic Field. Zenodo. [https://doi.org/10.5281/zenodo.19217183](https://doi.org/10.5281/zenodo.19217183). Available at: [https://github.com/GeoPressure/GeoMagR](https://github.com/GeoPressure/GeoMagR)
 
 
-For citation information in R with `citation("GeoMagR")`
+In R, run `citation("GeoMagR")` for the package citation.

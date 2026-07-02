@@ -1,4 +1,26 @@
-citHeader("To cite GeoMagR in publications use:")
+citHeader("If you use GeoMagR in publications, cite both the methods paper and the package:")
+
+citEntry(
+  entry = "Article",
+  title = "Geolocation with a magnetic sensor",
+  author = c(
+    person("Raphaël", "Nussbaumer"),
+    person("Elias", "Bächler"),
+    person("Felix", "Liechti"),
+    person("Martins", "Briedis"),
+    person("Philippe", "Dufour"),
+    person("Yoann", "Rime"),
+    person("Pablo", "Capilla-Lasheras"),
+    person("Jean B.", "Wong"),
+    person("Richard", "Holland"),
+    person("Barbara", "Helm")
+  ),
+  journal = "Methods in Ecology and Evolution",
+  year = "2026",
+  volume = "00",
+  pages = "1-13",
+  doi = "10.1111/2041-210x.70355"
+)
 
 citEntry(
   entry = "Manual",
