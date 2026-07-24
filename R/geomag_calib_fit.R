@@ -354,7 +354,7 @@ geomag_calib_fit <- function(
       }
     }
     B <- cbind(Bx, By, Bz)
-    initial_params <- c(rep(0, 3), rep(0.4, max(G, na.rm = TRUE)))
+    initial_params <- c(colMeans(B, na.rm = TRUE), rep(0.4, max(G, na.rm = TRUE)))
     lower <- c(apply(B, 2, min) - 0.1, rep(0.05, max(G, na.rm = TRUE)))
     upper <- c(apply(B, 2, max) + 0.1, rep(5, max(G, na.rm = TRUE)))
     result <- stats::optim(
