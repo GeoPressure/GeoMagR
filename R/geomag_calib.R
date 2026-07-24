@@ -223,12 +223,8 @@ geomag_calib <- function(
   # 6. Compute and store outputs
   mag$F <- sqrt(rowSums(mr^2))
   mag$I <- -asin(mag$magnetic_zcp / mag$F)
-  # Package convention is North=0, East=90; +pi/2 aligns axes before degree conversion.
-  mag$H <- ((atan2(mag$magnetic_xcp, mag$magnetic_ycp) + pi / 2) *
-    180 /
-    pi +
-    360) %%
-    360
+  # Package convention is North=0, East=90.
+  mag$H <- (atan2(-mag$magnetic_ycp, mag$magnetic_xcp) * 180 / pi + 360) %% 360
 
   tag$param$geomag_calib <- attr(mag, "geomag_calib")
   tag$param$geomag_calib$calib_data <- ifelse(
