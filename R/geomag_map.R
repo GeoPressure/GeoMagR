@@ -79,6 +79,13 @@ geomag_map <- function(
   quiet = FALSE
 ) {
   GeoPressureR::tag_assert(tag, "setmap")
+  GeoPressureR::tag_assert(tag, "magnetic")
+  if (!all(c("F", "I") %in% names(tag$magnetic))) {
+    cli::cli_abort(c(
+      "x" = "Magnetic data has not yet been calibrated.",
+      ">" = "Please run {.fun geomag_calib} first."
+    ))
+  }
   assertthat::assert_that(is.logical(compute_known))
   if (!isTRUE(all(tag$stap$stap_id == seq_len(nrow(tag$stap))))) {
     cli::cli_abort(
