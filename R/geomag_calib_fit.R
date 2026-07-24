@@ -161,7 +161,8 @@ geomag_calib_fit <- function(
     eig <- eigen(AT[1:3, 1:3] / -AT[4, 4], symmetric = FALSE)
     rotM <- eig$vectors[, 3:1]
     ev <- rev(eig$values)
-    radius <- sqrt(1 / ev)
+    geomag_calib_check_ellipsoid(ev)
+    radius <- sqrt(1 / Re(ev))
     radius_amplitude <- prod(radius)^(1 / 3)
     radius_shape <- radius / radius_amplitude
   } else if (method == "near-sphere") {
@@ -322,7 +323,8 @@ geomag_calib_fit <- function(
     eig <- eigen(AT[1:3, 1:3] / -AT[4, 4], symmetric = FALSE)
     rotM <- eig$vectors[, 3:1]
     ev <- rev(eig$values)
-    radius <- sqrt(1 / ev)
+    geomag_calib_check_ellipsoid(ev)
+    radius <- sqrt(1 / Re(ev))
     radius_amplitude <- prod(radius)^(1 / 3)
     radius_shape <- radius / radius_amplitude
   } else if (method == "sphere_stap") {
@@ -509,6 +511,16 @@ geomag_calib_fit <- function(
   mag
 }
 
+geomag_calib_check_ellipsoid <- function(ev) {
+  if (any(!is.finite(Re(ev)) | abs(Im(ev)) > sqrt(.Machine$double.eps) | Re(ev) <= 0)) {
+    cli::cli_abort(c(
+      "x" = "The magnetic data cannot be fitted by an ellipsoid.",
+      "i" = "At least one fitted ellipsoid axis has a non-positive length. This usually means the calibration data do not cover enough tag orientations.",
+      ">" = "Use a dedicated {.path magCalib} dataset while rotating the tag through all orientations.",
+      ">" = "Alternatively, use {.code geomag_calib(tag, calib_method = \"sphere\")} for a hard-iron-only calibration when soft-iron correction is not needed."
+    ))
+  }
+}
 
 #' Map raw magnetic coordinates to the calibrated frame.
 #'
