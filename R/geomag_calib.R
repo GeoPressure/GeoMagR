@@ -1,46 +1,61 @@
 #' Calibrate Magnetic and Acceleration Data for 3-Axis Sensors
 #'
 #' @description
-#' Performs tilt compensation and magnetic calibration for 3-axis sensor data, with support for
-#' field-data and in vitro calibration routines, outlier removal, and computation of orientation and
-#' field parameters. This function is designed for use with `GeoPressureR` tag objects and can
-#' utilize calibration datasets if available.
+#' Calibrates 3-axis magnetic sensor data, performs tilt compensation, and
+#' computes magnetic field intensity, inclination, and heading.
 #'
-#' ## Workflow
+#' @details
+#' ## Workflow and argument use
 #'
-#' 1. **Magnetic Data Calibration:**
-#'    - Select calibration data source (raw or from calibration dataset).
-#'    - Optionally remove extreme or outlier values.
-#'    - Fit and apply a calibration model (sphere/ellipse or their stap variants).
-#' 2. **Tilt Compensation:**
-#'    - Compute pitch and roll from acceleration.
-#'    - Project acceleration and calibrated magnetic data into the horizontal plane of the Earth frame.
-#' 3. **Orientation and Field Parameters:**
-#'    - Calculate heading, field intensity, and inclination.
-#'    - Store calibration metadata and processed data in the tag object.
+#' 1. **Classify static samples.** [tag_static()] adds `is_static` to the
+#'    magnetic data using `static_thr_hard` and `static_thr_outlier`. These
+#'    arguments only control the static classification; `is_static` is not used
+#'    to select observations for the calibration fit.
+#' 2. **Select calibration data.** `calib_data` selects a dedicated calibration
+#'    dataset, a supplied data frame, or the field data in `tag$magnetic`.
+#' 3. **Filter calibration samples.** When `rm_outlier = TRUE`,
+#'    `calib_thr_extreme` first removes observations with a large raw magnetic
+#'    vector norm. A preliminary sphere fit is then used to retain centered
+#'    norms between 0.25 and 0.65 and to remove MAD outliers, within stationary
+#'    periods when `stap_id` is available. This MAD filter is independent of
+#'    `static_thr_outlier`. Rows with incomplete magnetic axes are removed
+#'    regardless of `rm_outlier`.
+#' 4. **Choose and fit the calibration model.** `calib_method` selects the
+#'    sphere, ellipsoid, or stationary-period model. If it is `NULL`,
+#'    `"ellipse_stap"` is selected when the calibration data contain `stap_id`
+#'    and `tag$stap` contains known latitudes; otherwise, `"ellipse"` is used.
+#'    The fitted transformation is applied to every row of `tag$magnetic`, not
+#'    only static samples.
+#' 5. **Perform tilt compensation.** Pitch and roll are computed from
+#'    acceleration, then the acceleration and calibrated magnetic vectors are
+#'    rotated into the Earth frame.
+#' 6. **Compute and store outputs.** Field intensity, inclination, heading,
+#'    calibration data, and fitted parameters are stored in the returned tag.
 #'
 #' @param tag A `GeoPressureR` tag object containing magnetic and acceleration data.
-#' @param calib_data Logical, character, or `NULL`.
+#' @param calib_data Logical, character, data frame, or `NULL`.
 #'        If `TRUE`, uses calibration data from `magCalib/` subfolder.
 #'        If `FALSE`, calibrates using field-data calibration.
 #'        If a character path, uses calibration data from the specified directory.
+#'        If a data frame, uses it directly as the calibration dataset.
 #'        If `NULL`, auto-detects calibration folder.
 #' @param calib_method Character. Calibration method, one of `"sphere"`, `"ellipse"`,
 #'        `"near-sphere"`, `"sphere_stap"`, or `"ellipse_stap"`. If `NULL`, chosen automatically.
-#' @param rm_outlier Logical. If `TRUE`, removes outliers from calibration data (recommended).
+#' @param rm_outlier Logical. If `TRUE`, applies the magnetic calibration-data
+#'   filters described in **Workflow and argument use**.
 #' @param static_thr_hard Numeric. Hard threshold around 1 g used when classifying static
 #'   samples. Passed to [tag_static()].
 #' @param static_thr_outlier Numeric. MAD threshold used to remove outliers among candidate static
 #'   samples. Passed to [tag_static()].
 #' @param quiet Logical. If `TRUE`, suppresses progress messages.
 #' @param calib_thr_extreme Numeric. Upper threshold on the raw magnetic vector norm
-#'   (`sqrt(x^2 + y^2 + z^2)`) used to remove extreme calibration samples.
+#'   (`sqrt(x^2 + y^2 + z^2)`) used when `rm_outlier = TRUE`.
 #'
 #' @return Modified `GeoPressureR` tag object. The `$magnetic` data frame contains:
 #'   - `date`: Timestamp (POSIXct or numeric)
 #'   - `acceleration_x`, `acceleration_y`, `acceleration_z`: Raw acceleration data
 #'   - `magnetic_x`, `magnetic_y`, `magnetic_z`: Raw magnetic data
-#'   - `is_static`: Scaled MAD of acceleration (0 = static, >1 = movement)
+#'   - `is_static`: Logical static-sample classification
 #'   - `pitch`, `roll`: Orientation angles (radian)
 #'   - `acceleration_xp`, `acceleration_yp`, `acceleration_zp`: Projected acceleration in NED
 #'     frame
@@ -51,8 +66,8 @@
 #'     tilt compensation. 0 = North, 90 = East, 180 = South, 270 = West. Range [0, 360).
 #'   - `F`: Magnetic field intensity (Gauss)
 #'   - `I`: Inclination (radian)
-#' Also returns (invisibly) the calibration dataset used (`tag$mag_calib`) and calibration
-#' parameters (`tag$param$geomag_calib`).
+#' The calibration dataset used is stored in `tag$mag_calib`, and the fitted
+#' parameters and argument values are stored in `tag$param$geomag_calib`.
 #'
 #' @examples
 #' library(GeoPressureR)
@@ -76,6 +91,7 @@ geomag_calib <- function(
 ) {
   GeoPressureR::tag_assert(tag, "magnetic")
 
+  # 1. Classify static samples
   tag <- tag_static(
     tag,
     static_thr_hard = static_thr_hard,
@@ -83,7 +99,7 @@ geomag_calib <- function(
   )
   mag <- tag$magnetic
 
-  # Select calibration data source
+  # 2. Select calibration data
   if (is.null(calib_data)) {
     directory <- glue::glue("{tag$param$tag_create$directory}/magCalib")
     if (dir.exists(directory)) {
@@ -98,7 +114,6 @@ geomag_calib <- function(
     directory <- glue::glue("{tag$param$tag_create$directory}/magCalib")
   }
 
-  # Load calibration dataset when available, otherwise fallback to field data
   if (isTRUE(calib_data)) {
     tag_calib <- GeoPressureR::tag_create(
       "",
@@ -130,7 +145,8 @@ geomag_calib <- function(
     cli::cli_alert_info("Using raw magnetic data for calibration data")
   }
 
-  # Filter calibration samples
+  # 3. Filter calibration samples
+  n_calib <- nrow(mag_calib)
   if (rm_outlier) {
     mag_calib <- geomag_calib_rm(mag_calib, tag, calib_thr_extreme)
   }
@@ -139,8 +155,13 @@ geomag_calib <- function(
       mag_calib[, c("magnetic_x", "magnetic_y", "magnetic_z")]
     ),
   ]
+  if (nrow(mag_calib) < n_calib / 2) {
+    cli::cli_alert_warning(
+      "Filtering excluded {n_calib - nrow(mag_calib)} of {n_calib} calibration samples ({round(100 * (n_calib - nrow(mag_calib)) / n_calib)}%)."
+    )
+  }
 
-  # Choose calibration model
+  # 4. Choose and fit the calibration model
   if (is.null(calib_method)) {
     has_known_stap <- "stap_id" %in%
       names(mag_calib) &&
@@ -160,7 +181,6 @@ geomag_calib <- function(
     ))
   }
 
-  # Fit calibration and transform magnetic axes
   mag <- geomag_calib_fit(
     mag = mag,
     mag_calib = mag_calib,
@@ -168,13 +188,12 @@ geomag_calib <- function(
     stap = tag$stap
   )
 
-  # Compute orientation from acceleration
+  # 5. Perform tilt compensation
   gn <- sqrt(mag$acceleration_x^2 + mag$acceleration_y^2 + mag$acceleration_z^2)
 
   mag$pitch <- asin(-mag$acceleration_x / gn)
   mag$roll <- atan2(mag$acceleration_y / gn, mag$acceleration_z / gn)
 
-  # Rotate acceleration and magnetic vectors into Earth frame
   gr <- geomag_calib_rotate(
     matrix(
       c(mag$acceleration_x, mag$acceleration_y, mag$acceleration_z),
@@ -201,7 +220,7 @@ geomag_calib <- function(
   mag$magnetic_ycp <- mr[, 2]
   mag$magnetic_zcp <- mr[, 3]
 
-  # Derive field intensity, inclination, and heading
+  # 6. Compute and store outputs
   mag$F <- sqrt(rowSums(mr^2))
   mag$I <- -asin(mag$magnetic_zcp / mag$F)
   # Package convention is North=0, East=90; +pi/2 aligns axes before degree conversion.
@@ -211,7 +230,6 @@ geomag_calib <- function(
     360) %%
     360
 
-  # Store calibration metadata
   tag$param$geomag_calib <- attr(mag, "geomag_calib")
   tag$param$geomag_calib$calib_data <- ifelse(
     isTRUE(calib_data),
@@ -224,7 +242,6 @@ geomag_calib <- function(
   tag$param$geomag_calib$calib_thr_extreme <- calib_thr_extreme
   attr(mag, "geomag_calib") <- NULL
 
-  # Save processed data
   tag$mag_calib <- mag_calib
   tag$magnetic <- mag
 
@@ -234,7 +251,7 @@ geomag_calib <- function(
 
 #' @noRd
 geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
-  # Remove values with excessive magnetic field intensity
+  # Remove raw norms above calib_thr_extreme
   mn <- sqrt(
     mag_calib$magnetic_x^2 + mag_calib$magnetic_y^2 + mag_calib$magnetic_z^2
   )
@@ -246,7 +263,7 @@ geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
     ))
   }
 
-  # Initial offset estimation using spherical model
+  # Estimate the offset with a preliminary sphere fit
   mag_tmp <- geomag_calib_fit(
     mag = tag$magnetic,
     mag_calib = mag_calib,
@@ -255,7 +272,7 @@ geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
   )
   offset <- attr(mag_tmp, "geomag_calib")$offset
 
-  # Remove values with physically implausible field strengths
+  # Retain centered norms within fixed physical limits
   mn <- sqrt(
     (mag_calib$magnetic_x - offset[1])^2 +
       (mag_calib$magnetic_y - offset[2])^2 +
@@ -264,7 +281,7 @@ geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
   mag_calib <- mag_calib[mn > 0.25, ]
   mag_calib <- mag_calib[mn < 0.65, ]
 
-  # Outlier detection within stap groups if available
+  # Remove MAD outliers within stap groups when available
   mn <- sqrt(
     (mag_calib$magnetic_x - offset[1])^2 +
       (mag_calib$magnetic_y - offset[2])^2 +

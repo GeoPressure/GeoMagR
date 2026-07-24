@@ -10,7 +10,9 @@ plot_mag(
   stap_id = NULL,
   path = NULL,
   static_thr_hard = NULL,
-  static_thr_outlier = NULL
+  static_thr_outlier = NULL,
+  color_by = c("auto", "stap_id", "date"),
+  point_opacity = 1
 )
 }
 \arguments{

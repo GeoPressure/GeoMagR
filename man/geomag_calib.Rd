@@ -18,16 +18,18 @@ geomag_calib(
 \arguments{
 \item{tag}{A \code{GeoPressureR} tag object containing magnetic and acceleration data.}
 
-\item{calib_data}{Logical, character, or \code{NULL}.
+\item{calib_data}{Logical, character, data frame, or \code{NULL}.
 If \code{TRUE}, uses calibration data from \verb{magCalib/} subfolder.
 If \code{FALSE}, calibrates using field-data calibration.
 If a character path, uses calibration data from the specified directory.
+If a data frame, uses it directly as the calibration dataset.
 If \code{NULL}, auto-detects calibration folder.}
 
 \item{calib_method}{Character. Calibration method, one of \code{"sphere"}, \code{"ellipse"},
 \code{"near-sphere"}, \code{"sphere_stap"}, or \code{"ellipse_stap"}. If \code{NULL}, chosen automatically.}
 
-\item{rm_outlier}{Logical. If \code{TRUE}, removes outliers from calibration data (recommended).}
+\item{rm_outlier}{Logical. If \code{TRUE}, applies the magnetic calibration-data
+filters described in \strong{Workflow and argument use}.}
 
 \item{static_thr_hard}{Numeric. Hard threshold around 1 g used when classifying static
 samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
@@ -38,7 +40,7 @@ samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
 \item{quiet}{Logical. If \code{TRUE}, suppresses progress messages.}
 
 \item{calib_thr_extreme}{Numeric. Upper threshold on the raw magnetic vector norm
-(\code{sqrt(x^2 + y^2 + z^2)}) used to remove extreme calibration samples.}
+(\code{sqrt(x^2 + y^2 + z^2)}) used when \code{rm_outlier = TRUE}.}
 }
 \value{
 Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contains:
@@ -46,7 +48,7 @@ Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contain
 \item \code{date}: Timestamp (POSIXct or numeric)
 \item \code{acceleration_x}, \code{acceleration_y}, \code{acceleration_z}: Raw acceleration data
 \item \code{magnetic_x}, \code{magnetic_y}, \code{magnetic_z}: Raw magnetic data
-\item \code{is_static}: Scaled MAD of acceleration (0 = static, >1 = movement)
+\item \code{is_static}: Logical static-sample classification
 \item \code{pitch}, \code{roll}: Orientation angles (radian)
 \item \code{acceleration_xp}, \code{acceleration_yp}, \code{acceleration_zp}: Projected acceleration in NED
 frame
@@ -57,33 +59,41 @@ frame
 tilt compensation. 0 = North, 90 = East, 180 = South, 270 = West. Range [0, 360).
 \item \code{F}: Magnetic field intensity (Gauss)
 \item \code{I}: Inclination (radian)
-Also returns (invisibly) the calibration dataset used (\code{tag$mag_calib}) and calibration
-parameters (\code{tag$param$geomag_calib}).
+The calibration dataset used is stored in \code{tag$mag_calib}, and the fitted
+parameters and argument values are stored in \code{tag$param$geomag_calib}.
 }
 }
 \description{
-Performs tilt compensation and magnetic calibration for 3-axis sensor data, with support for
-field-data and in vitro calibration routines, outlier removal, and computation of orientation and
-field parameters. This function is designed for use with \code{GeoPressureR} tag objects and can
-utilize calibration datasets if available.
-\subsection{Workflow}{
+Calibrates 3-axis magnetic sensor data, performs tilt compensation, and
+computes magnetic field intensity, inclination, and heading.
+}
+\details{
+\subsection{Workflow and argument use}{
 \enumerate{
-\item \strong{Magnetic Data Calibration:}
-\itemize{
-\item Select calibration data source (raw or from calibration dataset).
-\item Optionally remove extreme or outlier values.
-\item Fit and apply a calibration model (sphere/ellipse or their stap variants).
-}
-\item \strong{Tilt Compensation:}
-\itemize{
-\item Compute pitch and roll from acceleration.
-\item Project acceleration and calibrated magnetic data into the horizontal plane of the Earth frame.
-}
-\item \strong{Orientation and Field Parameters:}
-\itemize{
-\item Calculate heading, field intensity, and inclination.
-\item Store calibration metadata and processed data in the tag object.
-}
+\item \strong{Classify static samples.} \code{\link[=tag_static]{tag_static()}} adds \code{is_static} to the
+magnetic data using \code{static_thr_hard} and \code{static_thr_outlier}. These
+arguments only control the static classification; \code{is_static} is not used
+to select observations for the calibration fit.
+\item \strong{Select calibration data.} \code{calib_data} selects a dedicated calibration
+dataset, a supplied data frame, or the field data in \code{tag$magnetic}.
+\item \strong{Filter calibration samples.} When \code{rm_outlier = TRUE},
+\code{calib_thr_extreme} first removes observations with a large raw magnetic
+vector norm. A preliminary sphere fit is then used to retain centered
+norms between 0.25 and 0.65 and to remove MAD outliers, within stationary
+periods when \code{stap_id} is available. This MAD filter is independent of
+\code{static_thr_outlier}. Rows with incomplete magnetic axes are removed
+regardless of \code{rm_outlier}.
+\item \strong{Choose and fit the calibration model.} \code{calib_method} selects the
+sphere, ellipsoid, or stationary-period model. If it is \code{NULL},
+\code{"ellipse_stap"} is selected when the calibration data contain \code{stap_id}
+and \code{tag$stap} contains known latitudes; otherwise, \code{"ellipse"} is used.
+The fitted transformation is applied to every row of \code{tag$magnetic}, not
+only static samples.
+\item \strong{Perform tilt compensation.} Pitch and roll are computed from
+acceleration, then the acceleration and calibrated magnetic vectors are
+rotated into the Earth frame.
+\item \strong{Compute and store outputs.} Field intensity, inclination, heading,
+calibration data, and fitted parameters are stored in the returned tag.
 }
 }
 }
