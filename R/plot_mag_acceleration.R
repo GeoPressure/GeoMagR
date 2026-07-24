@@ -2,7 +2,8 @@ plot_mag_acceleration <- function(
   tag,
   static_thr_hard = NULL,
   static_thr_outlier = NULL,
-  variant = c("acceleration", "acceleration_p")
+  variant = c("acceleration", "acceleration_p"),
+  point_opacity = 1
 ) {
   variant <- match.arg(variant)
   need_static <- !("is_static" %in%
@@ -55,7 +56,8 @@ plot_mag_acceleration <- function(
       ycol = cols_acc[2],
       zcol = cols_acc[3],
       colorcol = "is_static_label",
-      colors = viridisLite::viridis(5)
+      colors = viridisLite::viridis(5),
+      point_opacity = point_opacity
     ) |>
     add_ellipsoid_mesh(color = "lightblue") |>
     plotly::layout(

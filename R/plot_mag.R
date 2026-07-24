@@ -72,8 +72,18 @@ plot_mag <- function(
   stap_id = NULL,
   path = NULL,
   static_thr_hard = NULL,
-  static_thr_outlier = NULL
+  static_thr_outlier = NULL,
+  color_by = c("auto", "stap_id", "date"),
+  point_opacity = 1
 ) {
+  color_by <- match.arg(color_by)
+  if (color_by == "auto") {
+    color_by <- if ("stap_id" %in% names(tag$magnetic) && any(!is.na(tag$magnetic$stap_id))) {
+      "stap_id"
+    } else {
+      "date"
+    }
+  }
   tag <- plot_mag_normalize_stap_id(tag)
   cols <- get_stap_palette(tag)
 
@@ -84,47 +94,59 @@ plot_mag <- function(
       cols,
       mag_origin = "data",
       variant = "raw",
-      stap_id = stap_id
+      stap_id = stap_id,
+      color_by = color_by,
+      point_opacity = point_opacity
     ),
     magnetic_c = plot_mag_magnetic(
       tag,
       cols,
       mag_origin = "data",
       variant = "corr",
-      stap_id = stap_id
+      stap_id = stap_id,
+      color_by = color_by,
+      point_opacity = point_opacity
     ),
     magnetic_cp = plot_mag_magnetic(
       tag,
       cols,
       mag_origin = "data",
       variant = "corr_proj",
-      stap_id = stap_id
+      stap_id = stap_id,
+      color_by = color_by,
+      point_opacity = point_opacity
     ),
     magnetic_calib = plot_mag_magnetic(
       tag,
       cols,
       mag_origin = "calib",
       variant = "raw",
-      stap_id = stap_id
+      stap_id = stap_id,
+      color_by = color_by,
+      point_opacity = point_opacity
     ),
     calib = plot_mag_magnetic(
       tag,
       cols,
       mag_origin = "calib",
       variant = "raw",
-      stap_id = stap_id
+      stap_id = stap_id,
+      color_by = color_by,
+      point_opacity = point_opacity
     ),
     acceleration = plot_mag_acceleration(
       tag,
       static_thr_hard,
       static_thr_outlier,
-      "acceleration"
+      "acceleration",
+      point_opacity
     ),
     acceleration_p = plot_mag_acceleration(
       tag,
       static_thr_hard,
       static_thr_outlier,
-      "acceleration_p"
+      "acceleration_p",
+      point_opacity
     ),
     timeseries = plot_mag_timeseries(tag, cols, stap_id, path),
     histogram = plot_mag_histogram(tag, cols, stap_id, path),
@@ -253,11 +275,46 @@ add_3d_scatter <- function(
   zcol,
   colorcol,
   colors,
-  ...
+  point_opacity = 1
 ) {
   data <- data[stats::complete.cases(data[, c(xcol, ycol, zcol, colorcol)]), ]
   if (nrow(data) == 0) {
     return(p)
+  }
+  color <- data[[colorcol]]
+  if (inherits(color, "POSIXt") || inherits(color, "Date")) {
+    tick_dates <- seq(min(color), max(color), length.out = 5)
+    tick_format <- if (inherits(color, "POSIXt") &&
+      as.numeric(max(color)) - as.numeric(min(color)) < 2 * 24 * 60 * 60) {
+      "%Y-%m-%d %H:%M"
+    } else {
+      "%Y-%m-%d"
+    }
+    marker <- list(
+      color = as.numeric(color),
+      colorscale = lapply(seq_along(colors), function(i) {
+        c((i - 1) / (length(colors) - 1), colors[i])
+      }),
+      showscale = TRUE,
+      colorbar = list(
+        title = colorcol,
+        tickvals = as.numeric(tick_dates),
+        ticktext = format(tick_dates, tick_format)
+      ),
+      opacity = point_opacity
+    )
+    return(suppressWarnings(
+      p |>
+        plotly::add_markers(
+          data = data,
+          x = data[[xcol]],
+          y = data[[ycol]],
+          z = data[[zcol]],
+          marker = marker,
+          text = data[[colorcol]],
+          showlegend = FALSE
+        )
+    ))
   }
   suppressWarnings(
     p |>
@@ -266,10 +323,11 @@ add_3d_scatter <- function(
         x = data[[xcol]],
         y = data[[ycol]],
         z = data[[zcol]],
-        color = data[[colorcol]],
+        color = color,
         colors = colors,
+        marker = list(opacity = point_opacity),
         text = data[[colorcol]],
-        ...
+        showlegend = FALSE
       )
   )
 }

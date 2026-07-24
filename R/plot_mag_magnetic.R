@@ -3,7 +3,9 @@ plot_mag_magnetic <- function(
   cols,
   mag_origin = c("data", "calib"),
   variant = c("raw", "corr", "corr_proj"),
-  stap_id = NULL
+  stap_id = NULL,
+  color_by = c("stap_id", "date"),
+  point_opacity = 1
 ) {
   mag_origin <- match.arg(mag_origin)
   mag <- if (mag_origin == "data") {
@@ -49,8 +51,9 @@ plot_mag_magnetic <- function(
       cols_xyz[1],
       cols_xyz[2],
       cols_xyz[3],
-      "stap_id",
-      cols
+      color_by,
+      if (color_by == "stap_id") cols else viridisLite::viridis(256),
+      point_opacity = point_opacity
     ) |>
     plotly::layout(
       title = list(
