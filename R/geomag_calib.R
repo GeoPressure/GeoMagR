@@ -156,7 +156,7 @@ geomag_calib <- function(
     ),
   ]
   if (nrow(mag_calib) < n_calib / 2) {
-    cli::cli_alert_warning(
+    cli::cli_warn(
       "Filtering excluded {n_calib - nrow(mag_calib)} of {n_calib} calibration samples ({round(100 * (n_calib - nrow(mag_calib)) / n_calib)}%)."
     )
   }
