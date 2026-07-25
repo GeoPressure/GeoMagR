@@ -185,7 +185,8 @@ geomag_calib <- function(
     mag = mag,
     mag_calib = mag_calib,
     method = calib_method,
-    stap = tag$stap
+    stap = tag$stap,
+    control = list(maxit = 10000, trace = as.integer(!quiet), REPORT = 10)
   )
 
   # 5. Perform tilt compensation
