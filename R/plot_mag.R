@@ -78,7 +78,9 @@ plot_mag <- function(
 ) {
   color_by <- match.arg(color_by)
   if (color_by == "auto") {
-    color_by <- if ("stap_id" %in% names(tag$magnetic) && any(!is.na(tag$magnetic$stap_id))) {
+    color_by <- if (
+      "stap_id" %in% names(tag$magnetic) && !all(is.na(tag$magnetic$stap_id))
+    ) {
       "stap_id"
     } else {
       "date"
@@ -284,8 +286,10 @@ add_3d_scatter <- function(
   color <- data[[colorcol]]
   if (inherits(color, "POSIXt") || inherits(color, "Date")) {
     tick_dates <- seq(min(color), max(color), length.out = 5)
-    tick_format <- if (inherits(color, "POSIXt") &&
-      as.numeric(max(color)) - as.numeric(min(color)) < 2 * 24 * 60 * 60) {
+    tick_format <- if (
+      inherits(color, "POSIXt") &&
+        as.numeric(max(color)) - as.numeric(min(color)) < 2 * 24 * 60 * 60
+    ) {
       "%Y-%m-%d %H:%M"
     } else {
       "%Y-%m-%d"

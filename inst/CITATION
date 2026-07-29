@@ -27,7 +27,6 @@ citEntry(
   title = "GeoMagR: Geolocation by Magnetic Field",
   author = person("Raphaël", "Nussbaumer", email = "rafnuss@gmail.com", role = c("aut", "cre")),
   year = "2025",
-  note = "R package version 0.3.0",
   url = "https://github.com/GeoPressure/GeoMagR",
   doi = "10.5281/zenodo.19217183"
 )

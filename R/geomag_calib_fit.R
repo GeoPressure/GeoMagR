@@ -354,7 +354,10 @@ geomag_calib_fit <- function(
       }
     }
     B <- cbind(Bx, By, Bz)
-    initial_params <- c(colMeans(B, na.rm = TRUE), rep(0.4, max(G, na.rm = TRUE)))
+    initial_params <- c(
+      colMeans(B, na.rm = TRUE),
+      rep(0.4, max(G, na.rm = TRUE))
+    )
     lower <- c(apply(B, 2, min) - 0.1, rep(0.05, max(G, na.rm = TRUE)))
     upper <- c(apply(B, 2, max) + 0.1, rep(5, max(G, na.rm = TRUE)))
     result <- stats::optim(
@@ -512,7 +515,11 @@ geomag_calib_fit <- function(
 }
 
 geomag_calib_check_ellipsoid <- function(ev) {
-  if (any(!is.finite(Re(ev)) | abs(Im(ev)) > sqrt(.Machine$double.eps) | Re(ev) <= 0)) {
+  if (
+    any(
+      !is.finite(Re(ev)) | abs(Im(ev)) > sqrt(.Machine$double.eps) | Re(ev) <= 0
+    )
+  ) {
     cli::cli_abort(c(
       "x" = "The magnetic data cannot be fitted by an ellipsoid.",
       "i" = "At least one fitted ellipsoid axis has a non-positive length. This usually means the calibration data do not cover enough tag orientations.",

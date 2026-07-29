@@ -361,6 +361,12 @@ tag_static <- function(
     cli::cli_abort("No magnetic data found in the tag object.")
   }
   mag <- tag$magnetic
+  required_cols <- c("acceleration_x", "acceleration_y", "acceleration_z")
+  if (!all(required_cols %in% names(mag))) {
+    cli::cli_abort(
+      "Magnetic data must contain {.field acceleration_x}, {.field acceleration_y}, and {.field acceleration_z}."
+    )
+  }
 
   if (is.null(static_thr_hard)) {
     static_thr_hard <- 0.15

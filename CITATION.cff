@@ -8,7 +8,7 @@ message: 'To cite package "GeoMagR" in publications use:'
 type: software
 license: MIT
 title: 'GeoMagR: Geolocation by Magnetic Field'
-version: 0.3.0
+version: 0.2.1
 doi: 10.1111/2041-210x.70355
 abstract: Provides methods to produce likelihood maps of position based on magnetic
   field data, including calibration, outlier removal, and interactive 3D visualization.
@@ -66,7 +66,6 @@ references:
     given-names: Raphaël
     email: rafnuss@gmail.com
   year: '2025'
-  notes: R package version 0.3.0
   url: https://github.com/GeoPressure/GeoMagR
   doi: 10.5281/zenodo.19217183
 - type: software
