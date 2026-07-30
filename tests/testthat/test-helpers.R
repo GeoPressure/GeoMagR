@@ -16,11 +16,13 @@ test_that("clean_I and clean_F retain valid stationary observations", {
 })
 
 test_that("tag_static classifies samples from acceleration magnitude", {
-  tag <- list(magnetic = data.frame(
-    acceleration_x = c(0, 0, 0),
-    acceleration_y = c(0, 0, 0),
-    acceleration_z = c(1, 1.02, 0.8)
-  ))
+  tag <- list(
+    magnetic = data.frame(
+      acceleration_x = c(0, 0, 0),
+      acceleration_y = c(0, 0, 0),
+      acceleration_z = c(1, 1.02, 0.8)
+    )
+  )
 
   out <- tag_static(tag, static_thr_hard = 0.05)
 
