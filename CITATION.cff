@@ -346,6 +346,22 @@ references:
   year: '2026'
   doi: 10.32614/R.manuals
 - type: software
+  title: spelling
+  abstract: 'spelling: Tools for Spell Checking in R'
+  notes: Suggests
+  url: https://ropensci.r-universe.dev/spelling
+  repository: https://CRAN.R-project.org/package=spelling
+  authors:
+  - family-names: Ooms
+    given-names: Jeroen
+    email: jeroenooms@gmail.com
+    orcid: https://orcid.org/0000-0002-4035-0289
+  - family-names: Hester
+    given-names: Jim
+    email: james.hester@rstudio.com
+  year: '2026'
+  doi: 10.32614/CRAN.package.spelling
+- type: software
   title: withr
   abstract: 'withr: Run Code ''With'' Temporarily Modified Global State'
   notes: Suggests
@@ -457,6 +473,22 @@ references:
   year: '2026'
   doi: 10.32614/CRAN.package.rmarkdown
 - type: software
+  title: rnaturalearth
+  abstract: 'rnaturalearth: World Map Data from Natural Earth'
+  notes: Suggests
+  url: https://docs.ropensci.org/rnaturalearth/
+  repository: https://CRAN.R-project.org/package=rnaturalearth
+  authors:
+  - family-names: Massicotte
+    given-names: Philippe
+    email: pmassicotte@hotmail.com
+    orcid: https://orcid.org/0000-0002-5919-4116
+  - family-names: South
+    given-names: Andy
+    email: southandy@gmail.com
+  year: '2026'
+  doi: 10.32614/CRAN.package.rnaturalearth
+- type: software
   title: rnaturalearthdata
   abstract: 'rnaturalearthdata: World Vector Map Data from Natural Earth Used in ''rnaturalearth'''
   notes: Suggests
@@ -515,3 +547,4 @@ references:
     email: lionel@posit.co
   year: '2026'
   doi: 10.32614/CRAN.package.pkgload
+

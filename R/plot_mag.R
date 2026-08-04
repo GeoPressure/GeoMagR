@@ -39,6 +39,9 @@ utils::globalVariables(c(".data"))
 #'   samples in `"acceleration"` plots. Passed to [tag_static()].
 #' @param static_thr_outlier Numeric. MAD threshold used to remove outliers among candidate static
 #'   samples. Passed to [tag_static()].
+#' @param color_by Character, color mapping for magnetic plots. One of "auto", "stap_id", or
+#'   "date".
+#' @param point_opacity Numeric, opacity of plotted points.
 #'
 #' @return A `plotly::plot_ly()` object for magnetic, calibration, and acceleration plots; a
 #' `plotly::ggplotly()` object for timeseries plots; or a `ggplot2` object for histogram plots.

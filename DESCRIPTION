@@ -32,6 +32,7 @@ Suggests:
     quarto,
     knitr,
     rmarkdown,
+    rnaturalearth,
     rnaturalearthdata,
     maps,
     pkgload

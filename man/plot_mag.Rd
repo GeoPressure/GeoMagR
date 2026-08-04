@@ -34,6 +34,11 @@ samples in \code{"acceleration"} plots. Passed to \code{\link[=tag_static]{tag_s
 
 \item{static_thr_outlier}{Numeric. MAD threshold used to remove outliers among candidate static
 samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
+
+\item{color_by}{Character, color mapping for magnetic plots. One of "auto", "stap_id", or
+"date".}
+
+\item{point_opacity}{Numeric, opacity of plotted points.}
 }
 \value{
 A \code{plotly::plot_ly()} object for magnetic, calibration, and acceleration plots; a
