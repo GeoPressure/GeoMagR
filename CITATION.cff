@@ -6,7 +6,7 @@
 cff-version: 1.2.0
 message: 'To cite package "GeoMagR" in publications use:'
 type: software
-license: MIT
+license: GPL-3.0-or-later
 title: 'GeoMagR: Geolocation by Magnetic Field'
 version: 0.2.1
 doi: 10.1111/2041-210x.70355
