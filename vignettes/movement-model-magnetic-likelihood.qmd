@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
   comment = "#>",
   warning = FALSE,
   message = FALSE,
+  eval = Sys.getenv("CI") != "true",
   fig.width = 7,
   fig.height = 5
 )
