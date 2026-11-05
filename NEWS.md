@@ -1,4 +1,4 @@
-# GeoMagR (development version)
+# GeoMagR 0.3.0
 
 ## Calibration
 
