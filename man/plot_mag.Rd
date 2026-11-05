@@ -65,8 +65,10 @@ Plot types:
 \item \strong{"acceleration_p"}: Projected acceleration (NED frame), with reference gravity.
 \item \strong{"timeseries"}: Time series of inclination and intensity, with optional reference
 path overlay.
-\item \strong{"histogram"}: Histogram of errors (sample and mean per stationary period)
-against reference path.
+\item \strong{"histogram"}: Histograms of the observation error (sample minus its
+stationary-period mean, whose SD estimates \code{sd_e_*} of \code{\link[=geomag_map]{geomag_map()}}) and of the
+stationary-period error (period mean minus WMM at the reference path, whose SD estimates
+\code{sd_m_*}, slightly inflated by \code{sd_e_*}).
 }
 }
 \details{

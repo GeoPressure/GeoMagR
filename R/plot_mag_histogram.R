@@ -49,23 +49,29 @@ plot_mag_histogram <- function(tag, cols, stap_id, path) {
     ) |>
     dplyr::mutate(stap_id = factor(.data$stap_id))
 
+  # Observation error: sample minus its stationary-period mean (estimates sigma_e).
+  # Stationary-period error: period mean minus WMM (SD ~ sqrt(sigma_m^2 + sigma_e^2 / n)).
   err <- mag |>
     dplyr::left_join(path_long, by = c("stap_id", "variable")) |>
+    dplyr::group_by(.data$stap_id, .data$variable) |>
     dplyr::mutate(
-      err = .data$value - .data$val
+      err = .data$value - mean(.data$value),
+      err_wmm = .data$value - .data$val
     ) |>
-    dplyr::select(-c("date", "start", "end", "value", "val"))
+    dplyr::ungroup()
 
   err_stap <- err |>
     dplyr::group_by(.data$stap_id, .data$variable) |>
     dplyr::summarise(
-      err = mean(err, na.rm = TRUE),
+      err = mean(.data$err_wmm, na.rm = TRUE),
       .groups = "drop"
     )
 
   df <- rbind(
-    err |> dplyr::mutate(type = "observation (\u03c3_e)"),
-    err_stap |> dplyr::mutate(type = "stap (\u03c3_m)")
+    err |>
+      dplyr::select("stap_id", "variable", "err") |>
+      dplyr::mutate(type = "observation - stap mean (\u03c3_e)"),
+    err_stap |> dplyr::mutate(type = "stap mean - WMM (\u03c3_m)")
   )
 
   sds <- df |>
@@ -86,5 +92,5 @@ plot_mag_histogram <- function(tag, cols, stap_id, path) {
       vjust = 1.5,
       inherit.aes = FALSE
     ) +
-    ggplot2::labs(x = "Error obs - WMM", y = NULL)
+    ggplot2::labs(x = "Error (F in Gauss, I in degrees)", y = NULL)
 }
