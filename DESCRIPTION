@@ -16,7 +16,7 @@ Imports:
     glue,
     terra,
     wmm,
-    GeoPressureR,
+    GeoPressureR (>= 3.8.0),
     plotly,
     tidyr,
     dplyr,
