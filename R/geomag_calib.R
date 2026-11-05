@@ -147,14 +147,14 @@ geomag_calib <- function(
 
   # 3. Filter calibration samples
   n_calib <- nrow(mag_calib)
-  if (rm_outlier) {
-    mag_calib <- geomag_calib_rm(mag_calib, tag, calib_thr_extreme)
-  }
   mag_calib <- mag_calib[
     stats::complete.cases(
       mag_calib[, c("magnetic_x", "magnetic_y", "magnetic_z")]
     ),
   ]
+  if (rm_outlier) {
+    mag_calib <- geomag_calib_rm(mag_calib, tag, calib_thr_extreme)
+  }
   if (nrow(mag_calib) < n_calib / 2) {
     cli::cli_warn(
       "Filtering excluded {n_calib - nrow(mag_calib)} of {n_calib} calibration samples ({round(100 * (n_calib - nrow(mag_calib)) / n_calib)}%)."
