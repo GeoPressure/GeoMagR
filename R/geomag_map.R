@@ -236,29 +236,21 @@ geomag_map_ref <- function(tag, quiet = FALSE) {
   m <- expand.grid(lat = g$lat, lon = g$lon)
 
   if (!quiet) {
-    pb <- cli::cli_progress_bar(
-      "Calculating Magnetic Field map",
-      total = nrow(m)
-    )
-    map_mag <- mapply(
-      \(loni, lati) {
-        tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
+    pb <- cli::cli_progress_bar("Calculating Magnetic Field map", total = nrow(m))
+  }
+  map_mag <- mapply(
+    \(loni, lati) {
+      tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
+      if (!quiet) {
         cli::cli_progress_update(id = pb)
-        c(tmp$f, tmp$i)
-      },
-      m$lon,
-      m$lat
-    )
+      }
+      c(tmp$f, tmp$i)
+    },
+    m$lon,
+    m$lat
+  )
+  if (!quiet) {
     cli::cli_progress_done(id = pb)
-  } else {
-    map_mag <- mapply(
-      \(loni, lati) {
-        tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
-        c(tmp$f, tmp$i)
-      },
-      m$lon,
-      m$lat
-    )
   }
 
   map_f <- terra::rast(
