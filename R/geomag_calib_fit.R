@@ -368,7 +368,7 @@ geomag_calib_fit <- function(
       method = "L-BFGS-B",
       lower = lower,
       upper = upper,
-      control = list(maxit = 1000)
+      control = control
     )
     offset <- result$par[1:3]
     radius_amplitude <- result$par[4:length(result$par)]
