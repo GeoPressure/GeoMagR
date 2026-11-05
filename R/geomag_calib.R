@@ -392,10 +392,9 @@ tag_static <- function(
   }
 
   # Finish with a robust outlier filter on the candidate static samples.
-  is_static[is_static] <- !is_outlier(
-    gn[is_static],
-    static_thr_outlier = static_thr_outlier
-  )
+  # which() keeps samples with missing acceleration as NA instead of erroring.
+  idx <- which(is_static)
+  is_static[idx] <- !is_outlier(gn[idx], static_thr_outlier = static_thr_outlier)
 
   tag$magnetic$is_static <- is_static
   tag
