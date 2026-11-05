@@ -360,19 +360,8 @@ likelihood <- function(v, map, sd_m, sd_e) {
   if (n == 0) {
     return(matrix(1, nrow = dim(map)[1], ncol = dim(map)[2]))
   }
-  if (sd_m == 0) {
-    ll <- -sapply(map, \(x) sum((x - v)^2)) / (2 * sd_e^2)
-  } else {
-    sum_Y_minus_X <- sapply(map, \(x) sum(x - v))
-    sum_Y_minus_X_squared <- sapply(map, \(x) sum((x - v)^2))
-    a <- n / sd_e^2 + 1 / sd_m^2
-    b <- sum_Y_minus_X / sd_e^2
-    ll <- -0.5 * n * log(2 * pi * sd_e^2) - 0.5 * log(2 * pi * sd_m^2)
-    ll <- ll + 0.5 * log(2 * pi / a)
-    ll <- ll - (0.5 / sd_e^2) * sum_Y_minus_X_squared
-    ll <- ll + (b^2 / (2 * a))
-  }
-  l <- exp(ll - max(ll))
-  l <- matrix(l, nrow = dim(map)[1], ncol = dim(map)[2])
-  l
+  # Integrating out b leaves, up to a constant, a Gaussian of the sample mean with variance
+  # sd_m^2 + sd_e^2 / n (sd_m = 0 is the plain product of N(x, sd_e^2) likelihoods)
+  ll <- -(map - mean(v))^2 / (2 * (sd_m^2 + sd_e^2 / n))
+  exp(ll - max(ll))
 }
