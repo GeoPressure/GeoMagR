@@ -31,20 +31,23 @@ utils::globalVariables(c(".data"))
 #' @param type Character, plot type. One of "magnetic", "magnetic_c", "magnetic_cp",
 #'  "magnetic_calib" (or alias "calib"), "acceleration", "acceleration_p", "timeseries",
 #'  or "histogram".
-#' @param stap_id Integer or vector, stationary period(s) to plot calibration fit for
-#' (type="magnetic_calib" or "calib").
+#' @param stap_id Integer or vector, stationary period(s) whose fitted calibration ellipsoid is
+#'   overlaid on the 3D magnetic plots (`"magnetic"`, `"magnetic_c"`, `"magnetic_cp"`,
+#'   `"magnetic_calib"`). Negative values count from the last period. Ignored by other types.
 #' @param path Optional for `"timeseries"` and required for `"histogram"`. A data frame with
 #'   columns `start`, `end`, `stap_id`, `lon`, `lat` for plotting reference paths.
 #' @param static_thr_hard Numeric. Hard threshold around 1 g used when classifying static
-#'   samples in `"acceleration"` plots. Passed to [tag_static()].
+#'   samples in acceleration plots. Passed to [tag_static()].
 #' @param static_thr_outlier Numeric. MAD threshold used to remove outliers among candidate static
-#'   samples. Passed to [tag_static()].
-#' @param color_by Character, color mapping for magnetic plots. One of "auto", "stap_id", or
-#'   "date".
+#'   samples in acceleration plots. Passed to [tag_static()]. When both thresholds are `NULL` and
+#'   `tag$magnetic$is_static` exists (e.g. after [geomag_calib()]), that classification is used.
+#' @param color_by Character, color mapping for 3D magnetic plots. One of `"auto"` (`stap_id`
+#'   when available, otherwise `date`), `"stap_id"`, or `"date"`.
 #' @param point_opacity Numeric, opacity of plotted points.
 #'
 #' @return A `plotly::plot_ly()` object for magnetic, calibration, and acceleration plots; a
 #' `plotly::ggplotly()` object for timeseries plots; or a `ggplot2` object for histogram plots.
+#' Inclination is shown in degrees and intensity in Gauss.
 #'
 #' @details
 #' - Uses the `scico` or `viridisLite` palettes for clear color separation.

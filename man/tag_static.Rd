@@ -13,9 +13,9 @@ tag_static(
 }
 \arguments{
 \item{tag}{A \code{GeoPressureR} tag object containing a \verb{$magnetic} data frame
-with \code{acceleration_x}, \code{acceleration_y}, and \code{acceleration_z}. If
-\code{tag$acceleration} is present, its \code{value} column is used as an activity
-signal.}
+with \code{acceleration_x}, \code{acceleration_y}, and \code{acceleration_z}. With
+\code{use_activity = TRUE}, the \code{value} column of \code{tag$acceleration} is used as
+an activity signal.}
 
 \item{static_thr_hard}{Numeric or \code{NULL}. Hard threshold around 1 g used to
 build the initial candidate static set. If \code{NULL}, the default \code{0.15} is
@@ -38,16 +38,19 @@ considered static and \code{FALSE} denotes samples considered moving.
 Computes a logical \code{is_static} flag for each row in \code{tag$magnetic} using the
 acceleration magnitude.
 
-The classification is done in three steps:
+The classification is done in these steps:
 \enumerate{
 \item Compute the acceleration norm \code{gn = sqrt(x^2 + y^2 + z^2)} for each sample.
 \item Apply the hard threshold \code{abs(gn - 1) < static_thr_hard} to build the
 initial static candidates.
-\item If \code{tag$acceleration} is available, cluster the positive \code{value} samples
-into low- and high-activity groups, force the high-activity group to
-\code{FALSE}, then remove outliers among the remaining candidate static points
-using a MAD rule with threshold \code{static_thr_outlier}.
+\item If \code{use_activity = TRUE} and \code{tag$acceleration} is available, cluster the
+positive activity \code{value} samples into low- and high-activity groups and
+set samples matching the high-activity group (by date) to \code{FALSE}.
+\item Remove outliers among the remaining candidate static samples using a MAD
+rule on \code{gn} with threshold \code{static_thr_outlier}.
 }
+
+Samples with missing acceleration are returned as \code{NA}.
 }
 \examples{
 library(GeoPressureR)

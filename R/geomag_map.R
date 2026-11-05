@@ -7,41 +7,49 @@
 #' @param tag A calibrated [GeoPressureR tag object
 #'  ](https://geopressure.org/GeoPressureR/reference/tag_create.html) with map metadata set via
 #'  [tag_set_map()](https://geopressure.org/GeoPressureR/reference/tag_set_map.html).
-#' @param compute_known Logical. If TRUE, computes likelihood maps for known stationary periods;
-#'   if FALSE, fixes the likelihood at the known location.
-#' @param sd_e_f Numeric. Standard deviation of observation noise of intensity error (single value
-#' or one per stap).
-#' @param sd_e_i Numeric. Standard deviation of observation noise of inclination error (single
-#' value or one per stap).
-#' @param sd_m_f Numeric. Standard deviation of stationary-period-specific noise of intensity error
-#' (single value or per stap).
-#' @param sd_m_i Numeric. Standard deviation of stationary-period-specific noise of inclination
-#' error (single value or per stap).
-#' @param ref_map A `SpatRaster` with layers `intensity` and `inclination`. By default this is
-#' computed by `geomag_map_ref()`. Provide it if you've already computed it to save computational
-#' time.
-#' @param quiet Logical. If TRUE, suppresses progress messages.
+#' @param compute_known Logical. If `TRUE`, computes likelihood maps for known stationary periods;
+#'   if `FALSE`, sets their likelihood to 1 at the known location and 0 elsewhere.
+#' @param sd_e_f Numeric. Standard deviation of the observation error of intensity, in Gauss
+#'   (single value or one per stationary period).
+#' @param sd_e_i Numeric. Standard deviation of the observation error of inclination, in degrees
+#'   (single value or one per stationary period).
+#' @param sd_m_f Numeric. Standard deviation of the stationary-period error of intensity, in Gauss
+#'   (single value or one per stationary period).
+#' @param sd_m_i Numeric. Standard deviation of the stationary-period error of inclination, in
+#'   degrees (single value or one per stationary period).
+#' @param ref_map A `SpatRaster` with layers `intensity` and `inclination`, with the same grid as
+#'   the tag map. By default this is computed by [geomag_map_ref()]. Provide it if you have already
+#'   computed it to save time.
+#' @param quiet Logical. If `TRUE`, suppresses progress messages.
 #'
 #' @return A [GeoPressureR tag object
 #' ](https://geopressure.org/GeoPressureR/reference/tag_create.html) with likelihood maps
 #' added as:
 #'   - `tag$map_magnetic_intensity`
 #'   - `tag$map_magnetic_inclination`
-#'   - `tag$map_magnetic`
-#'   and updated parameters in `tag$param`.
+#'   - `tag$map_magnetic` (product of the two)
+#'
+#' The logical columns `clean_F` and `clean_I` of `tag$magnetic` flag the samples used for each
+#' map, and the parameters are stored in `tag$param$geomag_map`.
 #'
 #' @details
-#' The tag must already contain calibrated magnetic data and map metadata created with
-#' `tag_set_map()`. `geomag_map()` uses the tag's pressure record to estimate altitude for the WMM
-#' reference map. Stationary-period identifiers must be consecutive integers from 1 to the number
-#' of stationary periods.
+#' The tag must already contain calibrated magnetic data from [geomag_calib()] and map metadata
+#' created with `tag_set_map()`. Stationary-period identifiers must be consecutive integers from 1
+#' to the number of stationary periods.
+#'
+#' Only samples assigned to a stationary period (integer `stap_id`) are used. Intensity samples
+#' must lie between 0.25 and 0.65 Gauss, inclination samples must be static (`is_static`), and
+#' outliers are removed within each stationary period with a median absolute deviation rule
+#' (threshold 3).
 #'
 #' For an observed magnetic quantity \eqn{y_j} and WMM value \eqn{x_s} at location \eqn{s}, the
 #' observation model is \eqn{y_j = x_s + b + e_j}, with observation error
 #' \eqn{e_j \sim N(0, \sigma_e^2)} and stationary-period error
-#' \eqn{b \sim N(0, \sigma_m^2)}. The likelihood integrates over \eqn{b} and is returned relative
-#' to its maximum value. When no valid observations are available, an uninformative all-one map is
-#' returned.
+#' \eqn{b \sim N(0, \sigma_m^2)}. Integrating over \eqn{b}, the likelihood of the \eqn{n}
+#' observations of a stationary period is proportional to a Gaussian of their mean
+#' \eqn{\bar{y}}: \eqn{\exp(-(\bar{y} - x_s)^2 / (2(\sigma_m^2 + \sigma_e^2/n)))}. It is returned
+#' relative to its maximum value. When no valid observations are available, an uninformative
+#' all-one map is returned.
 #'
 #' Intensity values and their standard deviations (`sd_e_f`, `sd_m_f`) are in Gauss. Inclination
 #' values and their standard deviations (`sd_e_i`, `sd_m_i`) are in degrees. Sensitivity analyses
@@ -218,12 +226,18 @@ geomag_map <- function(
 #' Compute Reference Magnetic Map from WMM
 #'
 #' @description
-#' Computes raster maps of expected magnetic field intensity and inclination over the region
+#' Computes raster maps of expected magnetic field intensity and inclination over the map grid
 #' defined in the tag object, using the World Magnetic Model (WMM).
 #'
-#' @param tag A GeoPressureR tag object.
-#' @param quiet Logical. If TRUE, suppresses progress messages.
-#' @return A list of two terra raster layers: `intensity` (Gauss) and `inclination` (degrees).
+#' The field is computed at a single date, the median date of `tag$magnetic`, and a single
+#' altitude, derived from the median of `tag$pressure` with the standard barometric formula.
+#'
+#' @param tag A GeoPressureR tag object with magnetic and pressure data and map metadata set via
+#'   [tag_set_map()](https://geopressure.org/GeoPressureR/reference/tag_set_map.html).
+#' @param quiet Logical. If `TRUE`, suppresses progress messages.
+#' @return A two-layer `SpatRaster` with layers `intensity` (Gauss) and `inclination` (degrees). Its
+#'   attribute `geomag_ref` records the `time`, `height` (m) and WMM package version used; it is
+#'   lost if the raster is saved with `terra::wrap()` or written to file.
 #' @export
 geomag_map_ref <- function(tag, quiet = FALSE) {
   height <- -(288.15 / -0.0065) *
@@ -240,25 +254,20 @@ geomag_map_ref <- function(tag, quiet = FALSE) {
       "Calculating Magnetic Field map",
       total = nrow(m)
     )
-    map_mag <- mapply(
-      \(loni, lati) {
-        tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
+  }
+  map_mag <- mapply(
+    \(loni, lati) {
+      tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
+      if (!quiet) {
         cli::cli_progress_update(id = pb)
-        c(tmp$f, tmp$i)
-      },
-      m$lon,
-      m$lat
-    )
+      }
+      c(tmp$f, tmp$i)
+    },
+    m$lon,
+    m$lat
+  )
+  if (!quiet) {
     cli::cli_progress_done(id = pb)
-  } else {
-    map_mag <- mapply(
-      \(loni, lati) {
-        tmp <- wmm::GetMagneticFieldWMM(loni, lati, height, time)
-        c(tmp$f, tmp$i)
-      },
-      m$lon,
-      m$lat
-    )
   }
 
   map_f <- terra::rast(
@@ -297,60 +306,40 @@ clean_I <- function(mag) {
     keep <- keep & !is.na(mag$is_static) & mag$is_static
   }
 
-  # Apply robust outlier filtering within each stationary period.
-  has_stap_groups <- "stap_id" %in%
-    names(mag) &&
-    !all(is.na(mag$stap_id)) &&
-    !all(stats::na.omit(mag$stap_id) == 1)
-
-  if (has_stap_groups) {
-    keep_idx <- which(keep & is.finite(mag$I))
-    if (length(keep_idx) > 0) {
-      G <- round(mag$stap_id[keep_idx])
-      valid <- !is.na(G)
-      if (any(valid)) {
-        outlier <- unsplit(
-          lapply(split(mag$I[keep_idx][valid], G[valid]), is_outlier),
-          G[valid]
-        )
-        keep[keep_idx[valid]] <- keep[keep_idx[valid]] & !outlier
-      }
-    }
+  # Apply robust outlier filtering within each stationary period, unless all samples carry the
+  # fallback stap_id 1. Kept rows already have a finite value and an integer stap_id.
+  if (
+    "stap_id" %in%
+      names(mag) &&
+      any(keep) &&
+      !all(stats::na.omit(mag$stap_id) == 1)
+  ) {
+    G <- mag$stap_id[keep]
+    keep[keep] <- !unsplit(lapply(split(mag$I[keep], G), is_outlier), G)
   }
 
   keep
 }
 
 clean_F <- function(mag) {
-  keep <- rep(TRUE, nrow(mag))
-
   # Restrict to physically plausible field intensity.
-  keep <- keep & is.finite(mag$F) & mag$F > 0.25 & mag$F < 0.65
+  keep <- is.finite(mag$F) & mag$F > 0.25 & mag$F < 0.65
 
   # Keep only rows assigned to stationary periods.
   if ("stap_id" %in% names(mag)) {
     keep <- keep & !is.na(mag$stap_id) & mag$stap_id == round(mag$stap_id)
   }
 
-  # Apply robust outlier filtering within each stationary period.
-  has_stap_groups <- "stap_id" %in%
-    names(mag) &&
-    !all(is.na(mag$stap_id)) &&
-    !all(stats::na.omit(mag$stap_id) == 1)
-
-  if (has_stap_groups) {
-    keep_idx <- which(keep)
-    if (length(keep_idx) > 0) {
-      G <- round(mag$stap_id[keep_idx])
-      valid <- !is.na(G)
-      if (any(valid)) {
-        outlier <- unsplit(
-          lapply(split(mag$F[keep_idx][valid], G[valid]), is_outlier),
-          G[valid]
-        )
-        keep[keep_idx[valid]] <- keep[keep_idx[valid]] & !outlier
-      }
-    }
+  # Apply robust outlier filtering within each stationary period, unless all samples carry the
+  # fallback stap_id 1. Kept rows already have a finite value and an integer stap_id.
+  if (
+    "stap_id" %in%
+      names(mag) &&
+      any(keep) &&
+      !all(stats::na.omit(mag$stap_id) == 1)
+  ) {
+    G <- mag$stap_id[keep]
+    keep[keep] <- !unsplit(lapply(split(mag$F[keep], G), is_outlier), G)
   }
 
   keep
@@ -360,19 +349,8 @@ likelihood <- function(v, map, sd_m, sd_e) {
   if (n == 0) {
     return(matrix(1, nrow = dim(map)[1], ncol = dim(map)[2]))
   }
-  if (sd_m == 0) {
-    ll <- -sapply(map, \(x) sum((x - v)^2)) / (2 * sd_e^2)
-  } else {
-    sum_Y_minus_X <- sapply(map, \(x) sum(x - v))
-    sum_Y_minus_X_squared <- sapply(map, \(x) sum((x - v)^2))
-    a <- n / sd_e^2 + 1 / sd_m^2
-    b <- sum_Y_minus_X / sd_e^2
-    ll <- -0.5 * n * log(2 * pi * sd_e^2) - 0.5 * log(2 * pi * sd_m^2)
-    ll <- ll + 0.5 * log(2 * pi / a)
-    ll <- ll - (0.5 / sd_e^2) * sum_Y_minus_X_squared
-    ll <- ll + (b^2 / (2 * a))
-  }
-  l <- exp(ll - max(ll))
-  l <- matrix(l, nrow = dim(map)[1], ncol = dim(map)[2])
-  l
+  # Integrating out b leaves, up to a constant, a Gaussian of the sample mean with variance
+  # sd_m^2 + sd_e^2 / n (sd_m = 0 is the plain product of N(x, sd_e^2) likelihoods)
+  ll <- -(map - mean(v))^2 / (2 * (sd_m^2 + sd_e^2 / n))
+  exp(ll - max(ll))
 }

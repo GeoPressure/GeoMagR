@@ -7,14 +7,20 @@
 geomag_map_ref(tag, quiet = FALSE)
 }
 \arguments{
-\item{tag}{A GeoPressureR tag object.}
+\item{tag}{A GeoPressureR tag object with magnetic and pressure data and map metadata set via
+\href{https://geopressure.org/GeoPressureR/reference/tag_set_map.html}{tag_set_map()}.}
 
-\item{quiet}{Logical. If TRUE, suppresses progress messages.}
+\item{quiet}{Logical. If \code{TRUE}, suppresses progress messages.}
 }
 \value{
-A list of two terra raster layers: \code{intensity} (Gauss) and \code{inclination} (degrees).
+A two-layer \code{SpatRaster} with layers \code{intensity} (Gauss) and \code{inclination} (degrees). Its
+attribute \code{geomag_ref} records the \code{time}, \code{height} (m) and WMM package version used; it is
+lost if the raster is saved with \code{terra::wrap()} or written to file.
 }
 \description{
-Computes raster maps of expected magnetic field intensity and inclination over the region
+Computes raster maps of expected magnetic field intensity and inclination over the map grid
 defined in the tag object, using the World Magnetic Model (WMM).
+
+The field is computed at a single date, the median date of \code{tag$magnetic}, and a single
+altitude, derived from the median of \code{tag$pressure} with the standard barometric formula.
 }

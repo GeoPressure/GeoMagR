@@ -13,13 +13,12 @@
 #'    to select observations for the calibration fit.
 #' 2. **Select calibration data.** `calib_data` selects a dedicated calibration
 #'    dataset, a supplied data frame, or the field data in `tag$magnetic`.
-#' 3. **Filter calibration samples.** When `rm_outlier = TRUE`,
-#'    `calib_thr_extreme` first removes observations with a large raw magnetic
-#'    vector norm. A preliminary sphere fit is then used to retain centered
-#'    norms between 0.25 and 0.65 and to remove MAD outliers, within stationary
-#'    periods when `stap_id` is available. This MAD filter is independent of
-#'    `static_thr_outlier`. Rows with incomplete magnetic axes are removed
-#'    regardless of `rm_outlier`.
+#' 3. **Filter calibration samples.** Rows with incomplete magnetic axes are
+#'    always removed first. When `rm_outlier = TRUE`, `calib_thr_extreme` then
+#'    removes observations with a large raw magnetic vector norm. A preliminary
+#'    sphere fit is then used to retain centered norms between 0.25 and 0.65
+#'    and to remove MAD outliers, within stationary periods when `stap_id` is
+#'    available. This MAD filter is independent of `static_thr_outlier`.
 #' 4. **Choose and fit the calibration model.** `calib_method` selects the
 #'    sphere, ellipsoid, or stationary-period model. If it is `NULL`,
 #'    `"ellipse_stap"` is selected when the calibration data contain `stap_id`
@@ -34,11 +33,13 @@
 #'
 #' @param tag A `GeoPressureR` tag object containing magnetic and acceleration data.
 #' @param calib_data Logical, character, data frame, or `NULL`.
-#'        If `TRUE`, uses calibration data from `magCalib/` subfolder.
+#'        If `TRUE`, uses calibration data from the `magCalib/` subfolder of the
+#'        tag directory.
 #'        If `FALSE`, calibrates using field-data calibration.
-#'        If a character path, uses calibration data from the specified directory.
+#'        If a character path, uses calibration data from that directory, which
+#'        must exist.
 #'        If a data frame, uses it directly as the calibration dataset.
-#'        If `NULL`, auto-detects calibration folder.
+#'        If `NULL`, uses `magCalib/` when it exists and field data otherwise.
 #' @param calib_method Character. Calibration method, one of `"sphere"`, `"ellipse"`,
 #'        `"near-sphere"`, `"sphere_stap"`, or `"ellipse_stap"`. If `NULL`, chosen automatically.
 #' @param rm_outlier Logical. If `TRUE`, applies the magnetic calibration-data
@@ -314,20 +315,23 @@ geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
 #' Computes a logical `is_static` flag for each row in `tag$magnetic` using the
 #' acceleration magnitude.
 #'
-#' The classification is done in three steps:
+#' The classification is done in these steps:
 #' 1. Compute the acceleration norm `gn = sqrt(x^2 + y^2 + z^2)` for each sample.
 #' 2. Apply the hard threshold `abs(gn - 1) < static_thr_hard` to build the
 #'    initial static candidates.
-#' 3. If `tag$acceleration` is available, cluster the positive `value` samples
-#'    into low- and high-activity groups, force the high-activity group to
-#'    `FALSE`, then remove outliers among the remaining candidate static points
-#'    using a MAD rule with threshold `static_thr_outlier`.
+#' 3. If `use_activity = TRUE` and `tag$acceleration` is available, cluster the
+#'    positive activity `value` samples into low- and high-activity groups and
+#'    set samples matching the high-activity group (by date) to `FALSE`.
+#' 4. Remove outliers among the remaining candidate static samples using a MAD
+#'    rule on `gn` with threshold `static_thr_outlier`.
+#'
+#' Samples with missing acceleration are returned as `NA`.
 #'
 #'
 #' @param tag A `GeoPressureR` tag object containing a `$magnetic` data frame
-#'   with `acceleration_x`, `acceleration_y`, and `acceleration_z`. If
-#'   `tag$acceleration` is present, its `value` column is used as an activity
-#'   signal.
+#'   with `acceleration_x`, `acceleration_y`, and `acceleration_z`. With
+#'   `use_activity = TRUE`, the `value` column of `tag$acceleration` is used as
+#'   an activity signal.
 #' @param static_thr_hard Numeric or `NULL`. Hard threshold around 1 g used to
 #'   build the initial candidate static set. If `NULL`, the default `0.15` is
 #'   used.
