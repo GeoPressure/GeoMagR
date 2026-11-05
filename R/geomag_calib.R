@@ -386,9 +386,8 @@ tag_static <- function(
   if (use_activity && !is.null(tag$acceleration)) {
     acc <- tag$acceleration
     km <- stats::kmeans(acc$value[acc$value > 0], centers = 2)
-    acc$act_mig <- acc$value > mean(km$centers)
-    mag_acc <- merge(mag, acc, by = "date", all.x = TRUE)
-    is_static[mag_acc$act_mig] <- FALSE
+    # Match by date to keep the row order of tag$magnetic (merge() sorts by date).
+    is_static[acc$value[match(mag$date, acc$date)] > mean(km$centers)] <- FALSE
   }
 
   # Finish with a robust outlier filter on the candidate static samples.
