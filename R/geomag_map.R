@@ -289,60 +289,34 @@ clean_I <- function(mag) {
     keep <- keep & !is.na(mag$is_static) & mag$is_static
   }
 
-  # Apply robust outlier filtering within each stationary period.
-  has_stap_groups <- "stap_id" %in%
-    names(mag) &&
-    !all(is.na(mag$stap_id)) &&
-    !all(stats::na.omit(mag$stap_id) == 1)
-
-  if (has_stap_groups) {
-    keep_idx <- which(keep & is.finite(mag$I))
-    if (length(keep_idx) > 0) {
-      G <- round(mag$stap_id[keep_idx])
-      valid <- !is.na(G)
-      if (any(valid)) {
-        outlier <- unsplit(
-          lapply(split(mag$I[keep_idx][valid], G[valid]), is_outlier),
-          G[valid]
-        )
-        keep[keep_idx[valid]] <- keep[keep_idx[valid]] & !outlier
-      }
-    }
+  # Apply robust outlier filtering within each stationary period, unless all samples carry the
+  # fallback stap_id 1. Kept rows already have a finite value and an integer stap_id.
+  if (
+    "stap_id" %in% names(mag) && any(keep) && !all(stats::na.omit(mag$stap_id) == 1)
+  ) {
+    G <- mag$stap_id[keep]
+    keep[keep] <- !unsplit(lapply(split(mag$I[keep], G), is_outlier), G)
   }
 
   keep
 }
 
 clean_F <- function(mag) {
-  keep <- rep(TRUE, nrow(mag))
-
   # Restrict to physically plausible field intensity.
-  keep <- keep & is.finite(mag$F) & mag$F > 0.25 & mag$F < 0.65
+  keep <- is.finite(mag$F) & mag$F > 0.25 & mag$F < 0.65
 
   # Keep only rows assigned to stationary periods.
   if ("stap_id" %in% names(mag)) {
     keep <- keep & !is.na(mag$stap_id) & mag$stap_id == round(mag$stap_id)
   }
 
-  # Apply robust outlier filtering within each stationary period.
-  has_stap_groups <- "stap_id" %in%
-    names(mag) &&
-    !all(is.na(mag$stap_id)) &&
-    !all(stats::na.omit(mag$stap_id) == 1)
-
-  if (has_stap_groups) {
-    keep_idx <- which(keep)
-    if (length(keep_idx) > 0) {
-      G <- round(mag$stap_id[keep_idx])
-      valid <- !is.na(G)
-      if (any(valid)) {
-        outlier <- unsplit(
-          lapply(split(mag$F[keep_idx][valid], G[valid]), is_outlier),
-          G[valid]
-        )
-        keep[keep_idx[valid]] <- keep[keep_idx[valid]] & !outlier
-      }
-    }
+  # Apply robust outlier filtering within each stationary period, unless all samples carry the
+  # fallback stap_id 1. Kept rows already have a finite value and an integer stap_id.
+  if (
+    "stap_id" %in% names(mag) && any(keep) && !all(stats::na.omit(mag$stap_id) == 1)
+  ) {
+    G <- mag$stap_id[keep]
+    keep[keep] <- !unsplit(lapply(split(mag$F[keep], G), is_outlier), G)
   }
 
   keep
