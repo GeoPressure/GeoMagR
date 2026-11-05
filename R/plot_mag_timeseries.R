@@ -65,7 +65,7 @@ plot_mag_timeseries <- function(tag, cols, stap_id, path) {
   }
 
   if (!is.null(path)) {
-    time <- as.POSIXct(rowMeans(cbind(path$start, path$end)))
+    time <- path$start + (path$end - path$start) / 2
     path[c("F", "I")] <- t(vapply(
       seq_len(nrow(path)),
       \(i) {

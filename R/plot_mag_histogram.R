@@ -31,7 +31,7 @@ plot_mag_histogram <- function(tag, cols, stap_id, path) {
 
   path <- path |>
     dplyr::mutate(stap_id = factor(stap_id))
-  time <- as.POSIXct(rowMeans(cbind(path$start, path$end)))
+  time <- path$start + (path$end - path$start) / 2
   path[c("F", "I")] <- t(vapply(
     seq_len(nrow(path)),
     \(i) {
