@@ -109,7 +109,9 @@ geomag_calib <- function(
     }
   } else if (is.character(calib_data)) {
     if (!dir.exists(calib_data)) {
-      cli::cli_abort("Calibration directory {.path {calib_data}} does not exist.")
+      cli::cli_abort(
+        "Calibration directory {.path {calib_data}} does not exist."
+      )
     }
     directory <- calib_data
     calib_data <- TRUE
@@ -395,7 +397,10 @@ tag_static <- function(
   # Finish with a robust outlier filter on the candidate static samples.
   # which() keeps samples with missing acceleration as NA instead of erroring.
   idx <- which(is_static)
-  is_static[idx] <- !is_outlier(gn[idx], static_thr_outlier = static_thr_outlier)
+  is_static[idx] <- !is_outlier(
+    gn[idx],
+    static_thr_outlier = static_thr_outlier
+  )
 
   tag$magnetic$is_static <- is_static
   tag
