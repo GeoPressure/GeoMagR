@@ -232,7 +232,7 @@ get_stap_palette <- function(tag) {
 
   cols <- scico::scico(n, palette = "romaO")
   n2 <- length(cols) %/% 2
-  cols <- c(cols[(n2 + 1):length(cols)], cols[1:n2])
+  cols <- c(cols[(n2 + 1):length(cols)], cols[seq_len(n2)])
   stats::setNames(cols, seq_len(n))
 }
 
