@@ -23,26 +23,29 @@ optionally calibration) data.}
 "magnetic_calib" (or alias "calib"), "acceleration", "acceleration_p", "timeseries",
 or "histogram".}
 
-\item{stap_id}{Integer or vector, stationary period(s) to plot calibration fit for
-(type="magnetic_calib" or "calib").}
+\item{stap_id}{Integer or vector, stationary period(s) whose fitted calibration ellipsoid is
+overlaid on the 3D magnetic plots (\code{"magnetic"}, \code{"magnetic_c"}, \code{"magnetic_cp"},
+\code{"magnetic_calib"}). Negative values count from the last period. Ignored by other types.}
 
 \item{path}{Optional for \code{"timeseries"} and required for \code{"histogram"}. A data frame with
 columns \code{start}, \code{end}, \code{stap_id}, \code{lon}, \code{lat} for plotting reference paths.}
 
 \item{static_thr_hard}{Numeric. Hard threshold around 1 g used when classifying static
-samples in \code{"acceleration"} plots. Passed to \code{\link[=tag_static]{tag_static()}}.}
+samples in acceleration plots. Passed to \code{\link[=tag_static]{tag_static()}}.}
 
 \item{static_thr_outlier}{Numeric. MAD threshold used to remove outliers among candidate static
-samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
+samples in acceleration plots. Passed to \code{\link[=tag_static]{tag_static()}}. When both thresholds are \code{NULL} and
+\code{tag$magnetic$is_static} exists (e.g. after \code{\link[=geomag_calib]{geomag_calib()}}), that classification is used.}
 
-\item{color_by}{Character, color mapping for magnetic plots. One of "auto", "stap_id", or
-"date".}
+\item{color_by}{Character, color mapping for 3D magnetic plots. One of \code{"auto"} (\code{stap_id}
+when available, otherwise \code{date}), \code{"stap_id"}, or \code{"date"}.}
 
 \item{point_opacity}{Numeric, opacity of plotted points.}
 }
 \value{
 A \code{plotly::plot_ly()} object for magnetic, calibration, and acceleration plots; a
 \code{plotly::ggplotly()} object for timeseries plots; or a \code{ggplot2} object for histogram plots.
+Inclination is shown in degrees and intensity in Gauss.
 }
 \description{
 Provides interactive 3D and 2D plots for exploring \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } sensor data, including

@@ -7,41 +7,49 @@
 #' @param tag A calibrated [GeoPressureR tag object
 #'  ](https://geopressure.org/GeoPressureR/reference/tag_create.html) with map metadata set via
 #'  [tag_set_map()](https://geopressure.org/GeoPressureR/reference/tag_set_map.html).
-#' @param compute_known Logical. If TRUE, computes likelihood maps for known stationary periods;
-#'   if FALSE, fixes the likelihood at the known location.
-#' @param sd_e_f Numeric. Standard deviation of observation noise of intensity error (single value
-#' or one per stap).
-#' @param sd_e_i Numeric. Standard deviation of observation noise of inclination error (single
-#' value or one per stap).
-#' @param sd_m_f Numeric. Standard deviation of stationary-period-specific noise of intensity error
-#' (single value or per stap).
-#' @param sd_m_i Numeric. Standard deviation of stationary-period-specific noise of inclination
-#' error (single value or per stap).
-#' @param ref_map A `SpatRaster` with layers `intensity` and `inclination`. By default this is
-#' computed by `geomag_map_ref()`. Provide it if you've already computed it to save computational
-#' time.
-#' @param quiet Logical. If TRUE, suppresses progress messages.
+#' @param compute_known Logical. If `TRUE`, computes likelihood maps for known stationary periods;
+#'   if `FALSE`, sets their likelihood to 1 at the known location and 0 elsewhere.
+#' @param sd_e_f Numeric. Standard deviation of the observation error of intensity, in Gauss
+#'   (single value or one per stationary period).
+#' @param sd_e_i Numeric. Standard deviation of the observation error of inclination, in degrees
+#'   (single value or one per stationary period).
+#' @param sd_m_f Numeric. Standard deviation of the stationary-period error of intensity, in Gauss
+#'   (single value or one per stationary period).
+#' @param sd_m_i Numeric. Standard deviation of the stationary-period error of inclination, in
+#'   degrees (single value or one per stationary period).
+#' @param ref_map A `SpatRaster` with layers `intensity` and `inclination`, with the same grid as
+#'   the tag map. By default this is computed by [geomag_map_ref()]. Provide it if you have already
+#'   computed it to save time.
+#' @param quiet Logical. If `TRUE`, suppresses progress messages.
 #'
 #' @return A [GeoPressureR tag object
 #' ](https://geopressure.org/GeoPressureR/reference/tag_create.html) with likelihood maps
 #' added as:
 #'   - `tag$map_magnetic_intensity`
 #'   - `tag$map_magnetic_inclination`
-#'   - `tag$map_magnetic`
-#'   and updated parameters in `tag$param`.
+#'   - `tag$map_magnetic` (product of the two)
+#'
+#' The logical columns `clean_F` and `clean_I` of `tag$magnetic` flag the samples used for each
+#' map, and the parameters are stored in `tag$param$geomag_map`.
 #'
 #' @details
-#' The tag must already contain calibrated magnetic data and map metadata created with
-#' `tag_set_map()`. `geomag_map()` uses the tag's pressure record to estimate altitude for the WMM
-#' reference map. Stationary-period identifiers must be consecutive integers from 1 to the number
-#' of stationary periods.
+#' The tag must already contain calibrated magnetic data from [geomag_calib()] and map metadata
+#' created with `tag_set_map()`. Stationary-period identifiers must be consecutive integers from 1
+#' to the number of stationary periods.
+#'
+#' Only samples assigned to a stationary period (integer `stap_id`) are used. Intensity samples
+#' must lie between 0.25 and 0.65 Gauss, inclination samples must be static (`is_static`), and
+#' outliers are removed within each stationary period with a median absolute deviation rule
+#' (threshold 3).
 #'
 #' For an observed magnetic quantity \eqn{y_j} and WMM value \eqn{x_s} at location \eqn{s}, the
 #' observation model is \eqn{y_j = x_s + b + e_j}, with observation error
 #' \eqn{e_j \sim N(0, \sigma_e^2)} and stationary-period error
-#' \eqn{b \sim N(0, \sigma_m^2)}. The likelihood integrates over \eqn{b} and is returned relative
-#' to its maximum value. When no valid observations are available, an uninformative all-one map is
-#' returned.
+#' \eqn{b \sim N(0, \sigma_m^2)}. Integrating over \eqn{b}, the likelihood of the \eqn{n}
+#' observations of a stationary period is proportional to a Gaussian of their mean
+#' \eqn{\bar{y}}: \eqn{\exp(-(\bar{y} - x_s)^2 / (2(\sigma_m^2 + \sigma_e^2/n)))}. It is returned
+#' relative to its maximum value. When no valid observations are available, an uninformative
+#' all-one map is returned.
 #'
 #' Intensity values and their standard deviations (`sd_e_f`, `sd_m_f`) are in Gauss. Inclination
 #' values and their standard deviations (`sd_e_i`, `sd_m_i`) are in degrees. Sensitivity analyses
@@ -218,12 +226,18 @@ geomag_map <- function(
 #' Compute Reference Magnetic Map from WMM
 #'
 #' @description
-#' Computes raster maps of expected magnetic field intensity and inclination over the region
+#' Computes raster maps of expected magnetic field intensity and inclination over the map grid
 #' defined in the tag object, using the World Magnetic Model (WMM).
 #'
-#' @param tag A GeoPressureR tag object.
-#' @param quiet Logical. If TRUE, suppresses progress messages.
-#' @return A list of two terra raster layers: `intensity` (Gauss) and `inclination` (degrees).
+#' The field is computed at a single date, the median date of `tag$magnetic`, and a single
+#' altitude, derived from the median of `tag$pressure` with the standard barometric formula.
+#'
+#' @param tag A GeoPressureR tag object with magnetic and pressure data and map metadata set via
+#'   [tag_set_map()](https://geopressure.org/GeoPressureR/reference/tag_set_map.html).
+#' @param quiet Logical. If `TRUE`, suppresses progress messages.
+#' @return A two-layer `SpatRaster` with layers `intensity` (Gauss) and `inclination` (degrees). Its
+#'   attribute `geomag_ref` records the `time`, `height` (m) and WMM package version used; it is
+#'   lost if the raster is saved with `terra::wrap()` or written to file.
 #' @export
 geomag_map_ref <- function(tag, quiet = FALSE) {
   height <- -(288.15 / -0.0065) *

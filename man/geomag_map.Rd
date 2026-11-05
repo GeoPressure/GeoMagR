@@ -19,26 +19,26 @@ geomag_map(
 \item{tag}{A calibrated \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } with map metadata set via
 \href{https://geopressure.org/GeoPressureR/reference/tag_set_map.html}{tag_set_map()}.}
 
-\item{compute_known}{Logical. If TRUE, computes likelihood maps for known stationary periods;
-if FALSE, fixes the likelihood at the known location.}
+\item{compute_known}{Logical. If \code{TRUE}, computes likelihood maps for known stationary periods;
+if \code{FALSE}, sets their likelihood to 1 at the known location and 0 elsewhere.}
 
-\item{sd_e_f}{Numeric. Standard deviation of observation noise of intensity error (single value
-or one per stap).}
+\item{sd_e_f}{Numeric. Standard deviation of the observation error of intensity, in Gauss
+(single value or one per stationary period).}
 
-\item{sd_e_i}{Numeric. Standard deviation of observation noise of inclination error (single
-value or one per stap).}
+\item{sd_e_i}{Numeric. Standard deviation of the observation error of inclination, in degrees
+(single value or one per stationary period).}
 
-\item{sd_m_f}{Numeric. Standard deviation of stationary-period-specific noise of intensity error
-(single value or per stap).}
+\item{sd_m_f}{Numeric. Standard deviation of the stationary-period error of intensity, in Gauss
+(single value or one per stationary period).}
 
-\item{sd_m_i}{Numeric. Standard deviation of stationary-period-specific noise of inclination
-error (single value or per stap).}
+\item{sd_m_i}{Numeric. Standard deviation of the stationary-period error of inclination, in
+degrees (single value or one per stationary period).}
 
-\item{ref_map}{A \code{SpatRaster} with layers \code{intensity} and \code{inclination}. By default this is
-computed by \code{geomag_map_ref()}. Provide it if you've already computed it to save computational
-time.}
+\item{ref_map}{A \code{SpatRaster} with layers \code{intensity} and \code{inclination}, with the same grid as
+the tag map. By default this is computed by \code{\link[=geomag_map_ref]{geomag_map_ref()}}. Provide it if you have already
+computed it to save time.}
 
-\item{quiet}{Logical. If TRUE, suppresses progress messages.}
+\item{quiet}{Logical. If \code{TRUE}, suppresses progress messages.}
 }
 \value{
 A \href{https://geopressure.org/GeoPressureR/reference/tag_create.html}{GeoPressureR tag object } with likelihood maps
@@ -46,26 +46,34 @@ added as:
 \itemize{
 \item \code{tag$map_magnetic_intensity}
 \item \code{tag$map_magnetic_inclination}
-\item \code{tag$map_magnetic}
-and updated parameters in \code{tag$param}.
+\item \code{tag$map_magnetic} (product of the two)
 }
+
+The logical columns \code{clean_F} and \code{clean_I} of \code{tag$magnetic} flag the samples used for each
+map, and the parameters are stored in \code{tag$param$geomag_map}.
 }
 \description{
 Estimates a likelihood map for each stationary period based on observed magnetic data
 (intensity and inclination) compared to the expected values from the World Magnetic Model (WMM).
 }
 \details{
-The tag must already contain calibrated magnetic data and map metadata created with
-\code{tag_set_map()}. \code{geomag_map()} uses the tag's pressure record to estimate altitude for the WMM
-reference map. Stationary-period identifiers must be consecutive integers from 1 to the number
-of stationary periods.
+The tag must already contain calibrated magnetic data from \code{\link[=geomag_calib]{geomag_calib()}} and map metadata
+created with \code{tag_set_map()}. Stationary-period identifiers must be consecutive integers from 1
+to the number of stationary periods.
+
+Only samples assigned to a stationary period (integer \code{stap_id}) are used. Intensity samples
+must lie between 0.25 and 0.65 Gauss, inclination samples must be static (\code{is_static}), and
+outliers are removed within each stationary period with a median absolute deviation rule
+(threshold 3).
 
 For an observed magnetic quantity \eqn{y_j} and WMM value \eqn{x_s} at location \eqn{s}, the
 observation model is \eqn{y_j = x_s + b + e_j}, with observation error
 \eqn{e_j \sim N(0, \sigma_e^2)} and stationary-period error
-\eqn{b \sim N(0, \sigma_m^2)}. The likelihood integrates over \eqn{b} and is returned relative
-to its maximum value. When no valid observations are available, an uninformative all-one map is
-returned.
+\eqn{b \sim N(0, \sigma_m^2)}. Integrating over \eqn{b}, the likelihood of the \eqn{n}
+observations of a stationary period is proportional to a Gaussian of their mean
+\eqn{\bar{y}}: \eqn{\exp(-(\bar{y} - x_s)^2 / (2(\sigma_m^2 + \sigma_e^2/n)))}. It is returned
+relative to its maximum value. When no valid observations are available, an uninformative
+all-one map is returned.
 
 Intensity values and their standard deviations (\code{sd_e_f}, \code{sd_m_f}) are in Gauss. Inclination
 values and their standard deviations (\code{sd_e_i}, \code{sd_m_i}) are in degrees. Sensitivity analyses

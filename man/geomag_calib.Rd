@@ -19,11 +19,13 @@ geomag_calib(
 \item{tag}{A \code{GeoPressureR} tag object containing magnetic and acceleration data.}
 
 \item{calib_data}{Logical, character, data frame, or \code{NULL}.
-If \code{TRUE}, uses calibration data from \verb{magCalib/} subfolder.
+If \code{TRUE}, uses calibration data from the \verb{magCalib/} subfolder of the
+tag directory.
 If \code{FALSE}, calibrates using field-data calibration.
-If a character path, uses calibration data from the specified directory.
+If a character path, uses calibration data from that directory, which
+must exist.
 If a data frame, uses it directly as the calibration dataset.
-If \code{NULL}, auto-detects calibration folder.}
+If \code{NULL}, uses \verb{magCalib/} when it exists and field data otherwise.}
 
 \item{calib_method}{Character. Calibration method, one of \code{"sphere"}, \code{"ellipse"},
 \code{"near-sphere"}, \code{"sphere_stap"}, or \code{"ellipse_stap"}. If \code{NULL}, chosen automatically.}
@@ -76,13 +78,12 @@ arguments only control the static classification; \code{is_static} is not used
 to select observations for the calibration fit.
 \item \strong{Select calibration data.} \code{calib_data} selects a dedicated calibration
 dataset, a supplied data frame, or the field data in \code{tag$magnetic}.
-\item \strong{Filter calibration samples.} When \code{rm_outlier = TRUE},
-\code{calib_thr_extreme} first removes observations with a large raw magnetic
-vector norm. A preliminary sphere fit is then used to retain centered
-norms between 0.25 and 0.65 and to remove MAD outliers, within stationary
-periods when \code{stap_id} is available. This MAD filter is independent of
-\code{static_thr_outlier}. Rows with incomplete magnetic axes are removed
-regardless of \code{rm_outlier}.
+\item \strong{Filter calibration samples.} Rows with incomplete magnetic axes are
+always removed first. When \code{rm_outlier = TRUE}, \code{calib_thr_extreme} then
+removes observations with a large raw magnetic vector norm. A preliminary
+sphere fit is then used to retain centered norms between 0.25 and 0.65
+and to remove MAD outliers, within stationary periods when \code{stap_id} is
+available. This MAD filter is independent of \code{static_thr_outlier}.
 \item \strong{Choose and fit the calibration model.} \code{calib_method} selects the
 sphere, ellipsoid, or stationary-period model. If it is \code{NULL},
 \code{"ellipse_stap"} is selected when the calibration data contain \code{stap_id}
