@@ -368,7 +368,7 @@ geomag_calib_fit <- function(
       method = "L-BFGS-B",
       lower = lower,
       upper = upper,
-      control = list(maxit = 1000)
+      control = control
     )
     offset <- result$par[1:3]
     radius_amplitude <- result$par[4:length(result$par)]
@@ -498,7 +498,11 @@ geomag_calib_fit <- function(
     optim_info$convergence <- result$convergence
     optim_info$value <- result$value
     optim_info$counts <- result$counts
-    optim_info$message <- result$message %||% NA_character_
+    optim_info$message <- if (is.null(result$message)) {
+      NA_character_
+    } else {
+      result$message
+    }
   }
 
   # Attach metric as attribute

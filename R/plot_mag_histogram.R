@@ -31,7 +31,7 @@ plot_mag_histogram <- function(tag, cols, stap_id, path) {
 
   path <- path |>
     dplyr::mutate(stap_id = factor(stap_id))
-  time <- as.POSIXct(rowMeans(cbind(path$start, path$end)))
+  time <- path$start + (path$end - path$start) / 2
   path[c("F", "I")] <- t(vapply(
     seq_len(nrow(path)),
     \(i) {
@@ -64,8 +64,8 @@ plot_mag_histogram <- function(tag, cols, stap_id, path) {
     )
 
   df <- rbind(
-    err |> dplyr::mutate(type = "observation (\\u03c3_e)"),
-    err_stap |> dplyr::mutate(type = "stap (\\u03c3_m)")
+    err |> dplyr::mutate(type = "observation (\u03c3_e)"),
+    err_stap |> dplyr::mutate(type = "stap (\u03c3_m)")
   )
 
   sds <- df |>

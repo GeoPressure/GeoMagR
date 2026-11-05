@@ -54,11 +54,10 @@ rot <- function(x, pitch, yaw) {
 #' @return List with elements: `rotM`, `radius_shape`.
 #' @noRd
 rot_align <- function(rotM, radius_shape) {
-  # Align largest component to diagonal
-  if (max(abs(rotM)) > 0) {
-    rm <- which(abs(rotM) == max(abs(rotM)), arr.ind = TRUE)[1]
-    cm <- which(abs(rotM) == max(abs(rotM)), arr.ind = TRUE)[2]
-  }
+  # Align largest component to diagonal (first row/col of ties, e.g. identity)
+  rc <- which(abs(rotM) == max(abs(rotM)), arr.ind = TRUE)[1, ]
+  rm <- rc[[1]]
+  cm <- rc[[2]]
   if (rm != cm) {
     t <- rotM[, cm]
     rotM[, cm] <- rotM[, rm]

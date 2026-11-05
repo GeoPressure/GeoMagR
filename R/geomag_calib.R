@@ -107,7 +107,12 @@ geomag_calib <- function(
     } else {
       calib_data <- FALSE
     }
-  } else if (is.character(calib_data) && dir.exists(calib_data)) {
+  } else if (is.character(calib_data)) {
+    if (!dir.exists(calib_data)) {
+      cli::cli_abort(
+        "Calibration directory {.path {calib_data}} does not exist."
+      )
+    }
     directory <- calib_data
     calib_data <- TRUE
   } else if (isTRUE(calib_data)) {
@@ -147,14 +152,14 @@ geomag_calib <- function(
 
   # 3. Filter calibration samples
   n_calib <- nrow(mag_calib)
-  if (rm_outlier) {
-    mag_calib <- geomag_calib_rm(mag_calib, tag, calib_thr_extreme)
-  }
   mag_calib <- mag_calib[
     stats::complete.cases(
       mag_calib[, c("magnetic_x", "magnetic_y", "magnetic_z")]
     ),
   ]
+  if (rm_outlier) {
+    mag_calib <- geomag_calib_rm(mag_calib, tag, calib_thr_extreme)
+  }
   if (nrow(mag_calib) < n_calib / 2) {
     cli::cli_warn(
       "Filtering excluded {n_calib - nrow(mag_calib)} of {n_calib} calibration samples ({round(100 * (n_calib - nrow(mag_calib)) / n_calib)}%)."
@@ -275,8 +280,7 @@ geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
       (mag_calib$magnetic_y - offset[2])^2 +
       (mag_calib$magnetic_z - offset[3])^2
   )
-  mag_calib <- mag_calib[mn > 0.25, ]
-  mag_calib <- mag_calib[mn < 0.65, ]
+  mag_calib <- mag_calib[mn > 0.25 & mn < 0.65, ]
 
   # Remove MAD outliers within stap groups when available
   mn <- sqrt(
@@ -386,14 +390,15 @@ tag_static <- function(
   if (use_activity && !is.null(tag$acceleration)) {
     acc <- tag$acceleration
     km <- stats::kmeans(acc$value[acc$value > 0], centers = 2)
-    acc$act_mig <- acc$value > mean(km$centers)
-    mag_acc <- merge(mag, acc, by = "date", all.x = TRUE)
-    is_static[mag_acc$act_mig] <- FALSE
+    # Match by date to keep the row order of tag$magnetic (merge() sorts by date).
+    is_static[acc$value[match(mag$date, acc$date)] > mean(km$centers)] <- FALSE
   }
 
   # Finish with a robust outlier filter on the candidate static samples.
-  is_static[is_static] <- !is_outlier(
-    gn[is_static],
+  # which() keeps samples with missing acceleration as NA instead of erroring.
+  idx <- which(is_static)
+  is_static[idx] <- !is_outlier(
+    gn[idx],
     static_thr_outlier = static_thr_outlier
   )
 
