@@ -285,7 +285,7 @@ geomag_map_ref <- function(tag, quiet = FALSE) {
 }
 
 clean_I <- function(mag) {
-  keep <- rep(TRUE, nrow(mag))
+  keep <- is.finite(mag$I)
 
   # Keep only rows assigned to stationary periods.
   if ("stap_id" %in% names(mag)) {
