@@ -1,3 +1,13 @@
+# GeoMagR (development version)
+
+## Behaviour changes
+
+* `tag_static()` now uses `static_thr_hard = 0.1` by default (was 0.15), the same as
+  `geomag_calib()`, so acceleration plots of an uncalibrated tag match the calibration.
+* `plot_mag(type = "histogram")`: the observation panel now shows each sample minus its
+  stationary-period mean, whose SD estimates `sd_e_*`. It previously showed observation minus WMM,
+  whose SD mixes `sd_e_*` and `sd_m_*`.
+
 # GeoMagR 0.2.3
 
 Faster likelihood maps and documentation updates. Results are unchanged (`all.equal()` to 0.2.2
