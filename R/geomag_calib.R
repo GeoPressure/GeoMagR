@@ -331,7 +331,7 @@ geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
 #'   `use_activity = TRUE`, the `value` column of `tag$acceleration` is used as
 #'   an activity signal.
 #' @param static_thr_hard Numeric or `NULL`. Hard threshold around 1 g used to
-#'   build the initial candidate static set. If `NULL`, the default `0.15` is
+#'   build the initial candidate static set. If `NULL`, the default `0.1` is
 #'   used.
 #' @param static_thr_outlier Numeric or `NULL`. MAD threshold used to remove
 #'   outliers among the candidate static samples. If `NULL`, the default `3` is
@@ -375,7 +375,7 @@ tag_static <- function(
   }
 
   if (is.null(static_thr_hard)) {
-    static_thr_hard <- 0.15
+    static_thr_hard <- 0.1
   }
   if (is.null(static_thr_outlier)) {
     static_thr_outlier <- 3
