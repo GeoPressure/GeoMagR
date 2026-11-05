@@ -275,8 +275,7 @@ geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
       (mag_calib$magnetic_y - offset[2])^2 +
       (mag_calib$magnetic_z - offset[3])^2
   )
-  mag_calib <- mag_calib[mn > 0.25, ]
-  mag_calib <- mag_calib[mn < 0.65, ]
+  mag_calib <- mag_calib[mn > 0.25 & mn < 0.65, ]
 
   # Remove MAD outliers within stap groups when available
   mn <- sqrt(
