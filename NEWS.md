@@ -1,3 +1,35 @@
+# GeoMagR 0.3.0
+
+## Calibration
+
+`geomag_calib()` now has a single gravity-aided fit, chosen from a benchmark on 77 tags of 13
+species (5-min to 6-hourly logging). Results change for every tag.
+
+* The fit makes the field intensity and the inclination measured against gravity constant within
+  each stationary period (or day without `stap_id`), anchored to the WMM at stationary periods
+  with a known location. The sensor scale is kept. Median static inclination error on stationary
+  periods of unknown location: 2.1° (previous default `ellipse_stap`: 2.3°, which failed on 5
+  tags).
+* `calib_method` is `"ellipse"` (default) or `"sphere"`. `"near-sphere"`, `"sphere_stap"` and
+  `"ellipse_stap"` are retired and map to the new fit with a warning.
+* Only static samples are used. With field data, flights of at least 12 samples are added with
+  the flight-mean acceleration (birds that rest in a single orientation, e.g. owls), and all flight
+  samples are tilt-corrected with the flight-mean acceleration instead of single snapshots.
+* Give a stationary period with a known location (e.g. the equipment site): without it, the
+  intensity is not anchored and `geomag_calib()` warns.
+* `calib_thr_extreme` is now the maximum difference from the median raw norm, not an absolute
+  norm. The preliminary sphere fit and MAD filter of `rm_outlier` are removed.
+* A missing calibration directory now gives an error instead of silently using field data.
+* `geomag_calib_rotate()` is vectorised (same output, about 1000 times faster on 5-min data).
+
+## Behaviour changes
+
+* `tag_static()` now uses `static_thr_hard = 0.1` by default (was 0.15), the same as
+  `geomag_calib()`, so acceleration plots of an uncalibrated tag match the calibration.
+* `plot_mag(type = "histogram")`: the observation panel now shows each sample minus its
+  stationary-period mean, whose SD estimates `sd_e_*`. It previously showed observation minus WMM,
+  whose SD mixes `sd_e_*` and `sd_m_*`.
+
 # GeoMagR 0.2.3
 
 Faster likelihood maps and documentation updates. Results are unchanged (`all.equal()` to 0.2.2

@@ -18,7 +18,7 @@ with \code{acceleration_x}, \code{acceleration_y}, and \code{acceleration_z}. Wi
 an activity signal.}
 
 \item{static_thr_hard}{Numeric or \code{NULL}. Hard threshold around 1 g used to
-build the initial candidate static set. If \code{NULL}, the default \code{0.15} is
+build the initial candidate static set. If \code{NULL}, the default \code{0.1} is
 used.}
 
 \item{static_thr_outlier}{Numeric or \code{NULL}. MAD threshold used to remove

@@ -1,469 +1,143 @@
-#' Calibrate raw magnetic data using ellipsoid or sphere fitting
+#' Calibrate raw magnetic data with a gravity-aided sphere or ellipsoid fit
 #'
-#' Calibrates raw 3D magnetic field sensor data by fitting an ellipsoid or sphere,
-#' correcting for hard and soft iron effects. Supports calibration with or without
-#' stationary periods of known location (STAP). See [STMicroelectronics Design Tip](https://www.st.com/resource/en/design_tip/dm00286302-ellipsoid-or-sphere-fitting-for-sensor-calibration-stmicroelectronics.pdf) #nolintr
-#' for fitting details.
+#' Estimates the hard-iron offset (and, for `"ellipse"`, the soft-iron shape) from static
+#' samples, using that within each group (stationary period, or day without `stap_id`) the field
+#' intensity and the inclination measured against the acceleration (gravity) are constant. Groups
+#' at stationary periods of known location are anchored to the WMM intensity and inclination. The
+#' sensor scale is kept (geometric mean of the soft-iron radii = 1), which avoids the degenerate
+#' "large sphere through a small cap" solutions of free-scale fits when the bird only adopts a few
+#' orientations.
 #'
-#' @param mag data.frame. Raw magnetic data; must contain `magnetic_x`, `magnetic_y`, `magnetic_z`.
-#' @param mag_calib data.frame. Calibration data (typically a subset of `mag`), same columns as
-#' `mag`.
-#' @param method character. Calibration method; one of `"sphere"`, `"ellipse"`, `"near-sphere"`,
-#' `"ellipse_stap"`, `"sphere_stap"`.
-#' @param stap data.frame or NULL. Stationary period info for *_stap methods. Must contain
-#' `stap_id`, `known_lon`, `known_lat`.
-#' @param control list. Control parameters for optimization (see [stats::optim()]).
+#' @param mag data.frame. Magnetic data with `magnetic_x`, `magnetic_y`, `magnetic_z` (and
+#'   `stap_id`, `date` to compute the reference field at known stationary periods).
+#' @param mag_calib data.frame. Static calibration samples with `magnetic_x/y/z`,
+#'   `acceleration_x/y/z`, `date` and optionally `stap_id`.
+#' @param method character. `"ellipse"` (hard and soft iron) or `"sphere"` (hard iron only).
+#' @param stap data.frame or NULL. Stationary periods with `stap_id`, `known_lat`, `known_lon`.
+#' @param control list. `maxit` for [stats::optim()] and `shape_penalty`, the
+#'   soft-iron regularisation of `"ellipse"`.
 #'
-#' @return A data.frame like `mag` with additional columns: `magnetic_xc`, `magnetic_yc`,
-#' `magnetic_zc` (calibrated values).
-#'         Calibration parameters are returned as the `mag_calib` attribute (a list).
+#' @return `mag` with calibrated `magnetic_xc`, `magnetic_yc`, `magnetic_zc`. The fitted
+#'   parameters are returned in the `geomag_calib` attribute (a list).
 #' @noRd
 geomag_calib_fit <- function(
   mag,
   mag_calib,
   method = "ellipse",
   stap = NULL,
-  control = list(maxit = 10000)
+  control = list(maxit = 1000, shape_penalty = 0.01)
 ) {
-  # Validate required columns and method choice.
-  stopifnot(is.data.frame(mag), is.data.frame(mag_calib))
-  required_cols <- c("magnetic_x", "magnetic_y", "magnetic_z")
-  stopifnot(all(required_cols %in% names(mag)))
-  stopifnot(all(required_cols %in% names(mag_calib)))
-  valid_methods <- c(
-    "sphere",
-    "ellipse",
-    "near-sphere",
-    "ellipse_stap",
-    "sphere_stap"
+  ellipse <- method == "ellipse"
+  mag_cols <- c("magnetic_x", "magnetic_y", "magnetic_z")
+
+  # Evenly thinned to at most 20000 samples for speed
+  k <- unique(round(seq(
+    1,
+    nrow(mag_calib),
+    length.out = min(nrow(mag_calib), 20000)
+  )))
+  B <- as.matrix(mag_calib[k, mag_cols])
+  A <- as.matrix(mag_calib[
+    k,
+    c("acceleration_x", "acceleration_y", "acceleration_z")
+  ])
+  A <- A / sqrt(rowSums(A^2))
+
+  # Groups of constant field: stationary periods, or days without stap_id
+  by_stap <- "stap_id" %in% names(mag_calib)
+  grp_all <- if (by_stap) {
+    round(mag_calib$stap_id)
+  } else {
+    as.numeric(as.Date(mag_calib$date))
+  }
+  ug <- unique(grp_all[k])
+  G <- match(grp_all[k], ug)
+  nG <- tabulate(G, length(ug))
+
+  # WMM intensity (G) and sin(inclination) at stationary periods of known location
+  kf <- rep(NA_real_, length(ug))
+  ki <- kf
+  if (by_stap && !is.null(stap) && "known_lat" %in% names(stap)) {
+    sk <- stap[!is.na(stap$known_lat) & stap$stap_id %in% ug, ]
+    w <- vapply(
+      seq_len(nrow(sk)),
+      \(i) {
+        r <- wmm::GetMagneticFieldWMM(
+          sk$known_lon[i],
+          sk$known_lat[i],
+          0,
+          mean(mag$date[mag$stap_id %in% sk$stap_id[i]])
+        )
+        c(r$f / 1e5, sin(r$i * pi / 180))
+      },
+      numeric(2)
+    )
+    kf[match(sk$stap_id, ug)] <- w[1, ]
+    ki[match(sk$stap_id, ug)] <- w[2, ]
+  }
+
+  # Pseudo-Huber loss limits the weight of residual non-static samples and spikes. The sensor
+  # gain is not fitted: it trades off with the offset and runs to any bound it is given.
+  hub <- function(r) 0.02^2 * (sqrt(1 + (r / 0.02)^2) - 1)
+  par2cal <- function(p) {
+    list(
+      offset = p[1:3],
+      rotM = if (ellipse) rot(p[4:6]) else diag(3),
+      radius_shape = if (ellipse) exp(c(p[7:8], -p[7] - p[8])) else c(1, 1, 1)
+    )
+  }
+  fit_stats <- function(p) {
+    cl <- par2cal(p)
+    M <- geomag_calib_to_calibrated(B, cl$offset, cl$rotM, cl$radius_shape)
+    Fn <- sqrt(rowSums(M^2))
+    sI <- -rowSums(M * A) / Fn
+    Fg <- ifelse(is.na(kf), rowsum(Fn, G)[, 1] / nG, kf)
+    sg <- ifelse(is.na(ki), rowsum(sI, G)[, 1] / nG, ki)
+    # Absolute intensity residual (scaled by a typical 0.45 G): a relative one shrinks as the
+    # sphere grows, which favours a large offset when the bird adopts only a few orientations.
+    list(rF = (Fn - Fg[G]) / 0.45, rI = sI - sg[G], Fg = Fg)
+  }
+  fn <- function(p) {
+    s <- fit_stats(p)
+    # Earth's field is 0.22-0.67 G: without this bound, constancy residuals are scale free and an
+    # offset far from the data trivially satisfies them.
+    Fu <- s$Fg[is.na(kf)]
+    pen <- sum(nG[is.na(kf)] * (pmax(Fu - 0.75, 0.18 - Fu, 0) / 0.01)^2)
+    if (ellipse) {
+      pen <- pen +
+        control$shape_penalty * length(s$rF) * sum(c(p[7:8], -p[7] - p[8])^2)
+    }
+    sum(hub(s$rF)) + sum(hub(s$rI)) + pen
+  }
+
+  # Multi-start: algebraic sphere centre and the two hemispheres of the dip
+  F0 <- if (all(is.na(kf))) 0.5 else stats::median(kf, na.rm = TRUE)
+  v <- qr.solve(cbind(2 * B, 1), rowSums(B^2))
+  starts <- list(
+    v[1:3],
+    colMeans(B) + 0.8 * F0 * colMeans(A),
+    colMeans(B) - 0.8 * F0 * colMeans(A)
   )
-  if (!method %in% valid_methods) {
-    stop(
-      "Invalid method: method must be one of ",
-      paste(valid_methods, collapse = ", ")
+  fits <- lapply(starts, \(o) {
+    stats::optim(
+      c(o, if (ellipse) rep(0, 5)),
+      fn,
+      method = "BFGS",
+      control = list(maxit = control$maxit)
     )
-  }
-
-  # Compute pitch and roll for mag_calib if acceleration present (used in stap methods)
-  if (
-    all(
-      c("acceleration_x", "acceleration_y", "acceleration_z") %in%
-        names(mag_calib)
-    )
-  ) {
-    gn <- sqrt(
-      mag_calib$acceleration_x^2 +
-        mag_calib$acceleration_y^2 +
-        mag_calib$acceleration_z^2
-    )
-    mag_calib$pitch <- asin(-mag_calib$acceleration_x / gn)
-    mag_calib$roll <- atan2(
-      mag_calib$acceleration_y / gn,
-      mag_calib$acceleration_z / gn
-    )
-  }
-
-  # Magnetic calibration data as matrices
-  Bx <- as.numeric(mag_calib$magnetic_x)
-  By <- as.numeric(mag_calib$magnetic_y)
-  Bz <- as.numeric(mag_calib$magnetic_z)
-
-  # If using *_stap methods, prepare stationary period info
-  if (grepl("_stap$", method)) {
-    stopifnot(!is.null(stap))
-    stopifnot(is.data.frame(stap))
-    stopifnot("stap_id" %in% names(stap))
-
-    B <- cbind(Bx, By, Bz)
-
-    # Build known list of reference field at stap locations
-    known_list <- lapply(
-      stap$stap_id[!is.na(stap$known_lat)],
-      function(stap_id) {
-        idx <- match(stap_id, stap$stap_id)
-        if (any(mag$stap_id == stap_id)) {
-          tmp <- wmm::GetMagneticFieldWMM(
-            lon = stap$known_lon[idx],
-            lat = stap$known_lat[idx],
-            height = 0,
-            time = mean(mag$date[mag$stap_id == stap_id])
-          )
-          data.frame(
-            stap_id = stap_id,
-            f = as.numeric(unlist(tmp$f)) / 100000,
-            i = as.numeric(unlist(tmp$i))
-          )
-        } else {
-          data.frame(stap_id = NA_real_, f = NA_real_, i = NA_real_)
-        }
-      }
-    )
-    known <- if (length(known_list) > 0) {
-      do.call(rbind, known_list)
-    } else {
-      data.frame(stap_id = numeric(0), f = numeric(0), i = numeric(0))
-    }
-
-    G <- round(mag_calib$stap_id)
-  }
-
-  # Fit models according to the chosen method
-  if (method == "sphere") {
-    # Simple sphere fit (hard iron only)
-    D <- cbind(Bx * 2, By * 2, Bz * 2, rep(1, length(Bx)))
-    f <- Bx^2 + By^2 + Bz^2
-    v <- solve(t(D) %*% D) %*% t(D) %*% f
-    offset <- v[1:3]
-    radius_amplitude <- sqrt(sum(v[1:3]^2) + v[4])
-    radius_shape <- c(1, 1, 1)
-    rotM <- rot(0, 0, 0)
-  } else if (method == "ellipse") {
-    # Full ellipsoid fit
-    D <- cbind(
-      Bx^2,
-      By^2,
-      Bz^2,
-      2 * Bx * By,
-      2 * Bx * Bz,
-      2 * By * Bz,
-      2 * Bx,
-      2 * By,
-      2 * Bz
-    )
-    v <- solve(t(D) %*% D, t(D) %*% rep(1, length(Bx)))
-    A <- matrix(
-      c(
-        v[1],
-        v[4],
-        v[5],
-        v[7],
-        v[4],
-        v[2],
-        v[6],
-        v[8],
-        v[5],
-        v[6],
-        v[3],
-        v[9],
-        v[7],
-        v[8],
-        v[9],
-        -1
-      ),
-      4,
-      4,
-      byrow = TRUE
-    )
-    offset <- solve(-A[1:3, 1:3], v[7:9])
-    Tm <- diag(4)
-    Tm[4, 1:3] <- t(offset)
-    AT <- Tm %*% A %*% t(Tm)
-    eig <- eigen(AT[1:3, 1:3] / -AT[4, 4], symmetric = FALSE)
-    rotM <- eig$vectors[, 3:1]
-    ev <- rev(eig$values)
-    geomag_calib_check_ellipsoid(ev)
-    radius <- sqrt(1 / Re(ev))
-    radius_amplitude <- prod(radius)^(1 / 3)
-    radius_shape <- radius / radius_amplitude
-  } else if (method == "near-sphere") {
-    # Near-sphere (constrained ellipsoid, rarely used)
-    x2 <- Bx^2
-    y2 <- By^2
-    z2 <- Bz^2
-    D <- cbind(
-      x2 + y2 - 2 * z2,
-      x2 - 2 * y2 + z2,
-      4 * Bx * By,
-      2 * Bx * Bz,
-      2 * By * Bz,
-      2 * Bx,
-      2 * By,
-      2 * Bz,
-      rep(1, length(Bx))
-    )
-    R <- x2 + y2 + z2
-    b <- solve(t(D) %*% D, t(D) %*% R)
-    mtx <- matrix(
-      c(
-        3,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        3,
-        1,
-        -2,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        3,
-        -2,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        2,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1
-      ),
-      10,
-      10,
-      byrow = TRUE
-    )
-    v <- mtx %*% c(-1 / 3, b)
-    nn <- v[10]
-    v <- -v[1:9]
-    A <- matrix(
-      c(
-        v[1],
-        v[4],
-        v[5],
-        v[7],
-        v[4],
-        v[2],
-        v[6],
-        v[8],
-        v[5],
-        v[6],
-        v[3],
-        v[9],
-        v[7],
-        v[8],
-        v[9],
-        -nn
-      ),
-      4,
-      4,
-      byrow = TRUE
-    )
-    offset <- solve(-A[1:3, 1:3], v[7:9])
-    Tm <- diag(4)
-    Tm[4, 1:3] <- t(offset)
-    AT <- Tm %*% A %*% t(Tm)
-    eig <- eigen(AT[1:3, 1:3] / -AT[4, 4], symmetric = FALSE)
-    rotM <- eig$vectors[, 3:1]
-    ev <- rev(eig$values)
-    geomag_calib_check_ellipsoid(ev)
-    radius <- sqrt(1 / Re(ev))
-    radius_amplitude <- prod(radius)^(1 / 3)
-    radius_shape <- radius / radius_amplitude
-  } else if (method == "sphere_stap") {
-    # Sphere fit + per-stap amplitude scaling using known reference
-    calculate_err_sphere_stap <- function(params, B, G) {
-      radius_stap <- params[4:length(params)]
-      M <- geomag_calib_to_calibrated(
-        B,
-        offset = params[1:3],
-        rotM = diag(3),
-        radius_shape = c(1, 1, 1),
-        radius_amplitude = radius_stap[G],
-        rotate_back = FALSE
-      )
-      err1 <- mean((sqrt(rowSums(M^2)) - 1)^2, na.rm = TRUE)
-      M_off <- M * radius_stap[G]
-      M_F <- sqrt(rowSums(M_off^2))
-      G_id <- which(G %in% known$stap_id)
-      if (length(G_id) > 0) {
-        known_id <- match(G[G_id], known$stap_id)
-        M_known <- as.numeric(unlist(M_F[G_id]))
-        known_f <- as.numeric(unlist(known$f[known_id]))
-        err2 <- mean(((M_known / known_f) - 1)^2, na.rm = TRUE)
-        err1 + err2
-      } else {
-        err1
-      }
-    }
-    B <- cbind(Bx, By, Bz)
-    initial_params <- c(
-      colMeans(B, na.rm = TRUE),
-      rep(0.4, max(G, na.rm = TRUE))
-    )
-    lower <- c(apply(B, 2, min) - 0.1, rep(0.05, max(G, na.rm = TRUE)))
-    upper <- c(apply(B, 2, max) + 0.1, rep(5, max(G, na.rm = TRUE)))
-    result <- stats::optim(
-      par = initial_params,
-      fn = calculate_err_sphere_stap,
-      B = B,
-      G = G,
-      method = "L-BFGS-B",
-      lower = lower,
-      upper = upper,
-      control = control
-    )
-    offset <- result$par[1:3]
-    radius_amplitude <- result$par[4:length(result$par)]
-    radius_shape <- c(1, 1, 1)
-    rotM <- rot(0, 0, 0)
-
-    # Ellipsoid fit + per-stap scaling/rotation using known reference
-  } else if (method == "ellipse_stap") {
-    calculate_err_ellipse_stap <- function(params, B, G, err_type = c(1, 2)) {
-      err <- 0
-      radius <- c(1, params[7:8])
-      radius_stap <- params[9:length(params)]
-      M <- geomag_calib_to_calibrated(
-        B,
-        offset = params[1:3],
-        rotM = rot(params[4:6]),
-        radius_shape = radius,
-        radius_amplitude = radius_stap[G],
-        rotate_back = FALSE
-      )
-
-      if (1 %in% err_type) {
-        mn <- sqrt(rowSums(M^2))
-        e <- (mn - 1)^2
-        err <- err + mean(e, na.rm = TRUE)
-      }
-      if (2 %in% err_type) {
-        radius_amplitude <- radius_stap * prod(radius)^(1 / 3)
-        M_off <- M * radius_amplitude[G]
-        M_F <- sqrt(rowSums(M_off^2))
-        G_id <- which(G %in% known$stap_id)
-        if (length(G_id) > 0) {
-          known_id <- match(G[G_id], known$stap_id)
-          M_known <- as.numeric(unlist(M_F[G_id]))
-          known_f <- as.numeric(unlist(known$f[known_id]))
-          err2 <- ((M_known / known_f) - 1)^2
-          err <- err + mean(err2, na.rm = TRUE)
-        }
-      }
-      radius_shape <- radius / prod(radius)^(1 / 3)
-      err <- err + 0.05 * sum(log(radius_shape)^2)
-      err
-    }
-    B <- cbind(Bx, By, Bz)
-    initial_params <- c(
-      colMeans(B, na.rm = TRUE), # offset
-      0,
-      0,
-      0, # rot_angles
-      1,
-      1, # radius ratio
-      rep(0.4, max(G, na.rm = TRUE))
-    )
-    lower <- c(
-      apply(B, 2, min, na.rm = TRUE) - 0.1,
-      rep(-pi, 3),
-      0.3,
-      0.3,
-      rep(0.05, max(G, na.rm = TRUE))
-    )
-    upper <- c(
-      apply(B, 2, max, na.rm = TRUE) + 0.1,
-      rep(pi, 3),
-      3,
-      3,
-      rep(5, max(G, na.rm = TRUE))
-    )
-    result <- stats::optim(
-      par = initial_params,
-      fn = calculate_err_ellipse_stap,
-      B = B,
-      G = G,
-      err_type = c(1, 2),
-      method = "L-BFGS-B",
-      lower = lower,
-      upper = upper,
-      control = control
-    )
-    offset <- result$par[1:3]
-    rot_angles <- result$par[4:6]
-    rotM <- rot(rot_angles)
-    radius_shape <- c(1, result$par[7:8])
-    radius_amplitude <- result$par[9:length(result$par)] *
-      prod(radius_shape)^(1 / 3)
-    radius_shape <- radius_shape / prod(radius_shape)^(1 / 3)
-  }
+  })
+  result <- fits[[which.min(vapply(fits, \(r) r$value, numeric(1)))]]
+  cl <- par2cal(result$par)
+  s <- fit_stats(result$par)
 
   # Align rotation and shape (helper: rot_align)
-  out <- rot_align(rotM, radius_shape)
+  out <- rot_align(cl$rotM, cl$radius_shape)
   rotM <- out$rotM
   radius_shape <- out$radius_shape
 
   magnetic_xYZ <- geomag_calib_to_calibrated(
-    mag[, required_cols, drop = FALSE],
-    offset = offset,
+    mag[, mag_cols, drop = FALSE],
+    offset = cl$offset,
     rotM = rotM,
     radius_shape = radius_shape
   )
@@ -471,66 +145,41 @@ geomag_calib_fit <- function(
   mag$magnetic_yc <- magnetic_xYZ[, 2]
   mag$magnetic_zc <- magnetic_xYZ[, 3]
 
-  # We also apply the transformation to the calibration data to get fit_rmse
-  calib_radius_amplitude <- NULL
-  if (method %in% c("sphere_stap", "ellipse_stap")) {
-    calib_radius_amplitude <- radius_amplitude[round(mag_calib$stap_id)]
+  # Fitted field intensity of each group, indexed by stap_id (median without stap_id)
+  radius_amplitude <- if (by_stap) {
+    replace(rep(NA_real_, max(ug)), ug, s$Fg)
+  } else {
+    stats::median(s$Fg)
   }
 
+  # Normalised residual of all calibration samples to get fit_rmse
   calib_xYZ <- geomag_calib_to_calibrated(
-    mag_calib[, required_cols, drop = FALSE],
-    offset = offset,
+    mag_calib[, mag_cols, drop = FALSE],
+    offset = cl$offset,
     rotM = rotM,
     radius_shape = radius_shape,
-    radius_amplitude = calib_radius_amplitude
+    radius_amplitude = s$Fg[match(grp_all, ug)]
   )
 
-  # Base diagnostics
-  optim_info <- list(
-    fit_rmse = sqrt(mean((sqrt(rowSums(calib_xYZ^2)) - 1)^2, na.rm = TRUE)),
-    n_obs = nrow(calib_xYZ)
-  )
-
-  # Add stap-specific info
-  if (method %in% c("sphere_stap", "ellipse_stap")) {
-    optim_info$n_stap <- length(unique(round(mag_calib$stap_id)))
-
-    optim_info$convergence <- result$convergence
-    optim_info$value <- result$value
-    optim_info$counts <- result$counts
-    optim_info$message <- if (is.null(result$message)) {
-      NA_character_
-    } else {
-      result$message
-    }
-  }
-
-  # Attach metric as attribute
   attr(mag, "geomag_calib") <- list(
     calib_method = method,
     radius_amplitude = radius_amplitude,
     radius_shape = radius_shape,
-    offset = offset,
+    offset = cl$offset,
     rotM = rotM,
-    optim = optim_info
+    optim = list(
+      fit_rmse = sqrt(mean((sqrt(rowSums(calib_xYZ^2)) - 1)^2, na.rm = TRUE)),
+      n_obs = nrow(calib_xYZ),
+      n_group = length(ug),
+      n_known = sum(!is.na(kf)),
+      rmse_F = sqrt(mean(s$rF^2)),
+      rmse_I = sqrt(mean(s$rI^2)) * 180 / pi, # sin(I) residual, approx. degrees
+      convergence = result$convergence,
+      value = result$value
+    )
   )
 
   mag
-}
-
-geomag_calib_check_ellipsoid <- function(ev) {
-  if (
-    any(
-      !is.finite(Re(ev)) | abs(Im(ev)) > sqrt(.Machine$double.eps) | Re(ev) <= 0
-    )
-  ) {
-    cli::cli_abort(c(
-      "x" = "The magnetic data cannot be fitted by an ellipsoid.",
-      "i" = "At least one fitted ellipsoid axis has a non-positive length. This usually means the calibration data do not cover enough tag orientations.",
-      ">" = "Use a dedicated {.path magCalib} dataset while rotating the tag through all orientations.",
-      ">" = "Alternatively, use {.code geomag_calib(tag, calib_method = \"sphere\")} for a hard-iron-only calibration when soft-iron correction is not needed."
-    ))
-  }
 }
 
 #' Map raw magnetic coordinates to the calibrated frame.

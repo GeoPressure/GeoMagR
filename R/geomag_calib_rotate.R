@@ -46,9 +46,16 @@ geomag_calib_rotate <- function(a, roll, pitch, yaw = 0) {
   assertthat::assert_that(assertthat::are_equal(nrow(a), length(pitch)))
   assertthat::assert_that(assertthat::are_equal(nrow(a), length(yaw)))
 
-  ar <- matrix(NA, nrow(a), ncol(a))
-  for (i in seq_len(nrow(a))) {
-    ar[i, ] <- rot(roll[i], pitch[i], yaw[i]) %*% a[i, ]
-  }
-  return(ar)
+  # Vectorised rot(roll, pitch, yaw) %*% a[i, ] = Rz %*% Ry %*% Rx %*% a[i, ]
+  cr <- cos(roll)
+  sr <- sin(roll)
+  cp <- cos(pitch)
+  sp <- sin(pitch)
+  cy <- cos(yaw)
+  sy <- sin(yaw)
+  y1 <- cr * a[, 2] - sr * a[, 3]
+  z1 <- sr * a[, 2] + cr * a[, 3]
+  x2 <- cp * a[, 1] + sp * z1
+  z2 <- -sp * a[, 1] + cp * z1
+  cbind(cy * x2 - sy * y1, sy * x2 + cy * y1, z2, deparse.level = 0)
 }

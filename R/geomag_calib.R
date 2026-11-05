@@ -8,26 +8,33 @@
 #' ## Workflow and argument use
 #'
 #' 1. **Classify static samples.** [tag_static()] adds `is_static` to the
-#'    magnetic data using `static_thr_hard` and `static_thr_outlier`. These
-#'    arguments only control the static classification; `is_static` is not used
-#'    to select observations for the calibration fit.
+#'    magnetic data using `static_thr_hard` and `static_thr_outlier`. Only static
+#'    samples are used for the calibration fit, because their acceleration is the
+#'    gravity direction.
 #' 2. **Select calibration data.** `calib_data` selects a dedicated calibration
-#'    dataset, a supplied data frame, or the field data in `tag$magnetic`.
-#' 3. **Filter calibration samples.** Rows with incomplete magnetic axes are
-#'    always removed first. When `rm_outlier = TRUE`, `calib_thr_extreme` then
-#'    removes observations with a large raw magnetic vector norm. A preliminary
-#'    sphere fit is then used to retain centered norms between 0.25 and 0.65
-#'    and to remove MAD outliers, within stationary periods when `stap_id` is
-#'    available. This MAD filter is independent of `static_thr_outlier`.
-#' 4. **Choose and fit the calibration model.** `calib_method` selects the
-#'    sphere, ellipsoid, or stationary-period model. If it is `NULL`,
-#'    `"ellipse_stap"` is selected when the calibration data contain `stap_id`
-#'    and `tag$stap` contains known latitudes; otherwise, `"ellipse"` is used.
-#'    The fitted transformation is applied to every row of `tag$magnetic`, not
-#'    only static samples.
-#' 5. **Perform tilt compensation.** Pitch and roll are computed from
-#'    acceleration, then the acceleration and calibrated magnetic vectors are
-#'    rotated into the Earth frame.
+#'    dataset, a supplied data frame, or the field data in `tag$magnetic`. With field
+#'    data and `stap_id`, the samples of flights with at least 12 samples (e.g. 1 h at
+#'    5 min) are added with the flight-mean acceleration as gravity direction: birds
+#'    that rest in a single orientation (e.g. owls) only rotate in flight. Static
+#'    samples are then thinned to three times the flight samples.
+#' 3. **Filter calibration samples.** When `rm_outlier = TRUE`, samples whose raw
+#'    magnetic norm differs from the median raw norm by more than `calib_thr_extreme`
+#'    are removed (spikes). Rows with incomplete magnetic axes are removed regardless
+#'    of `rm_outlier`.
+#' 4. **Fit the calibration model.** The hard-iron offset (and the soft-iron shape for
+#'    `calib_method = "ellipse"`) is fitted so that, within each stationary period (or
+#'    day without `stap_id`), the field intensity and the inclination measured against
+#'    the acceleration are constant. Stationary periods of known location
+#'    (`tag$stap$known_lat`) are anchored to the WMM intensity and inclination. The
+#'    sensor scale is kept, which avoids the degenerate fits of free-scale sphere or
+#'    ellipsoid fits when the bird only adopts a few orientations. Without any known
+#'    stationary period, the intensity is only bounded to 0.18-0.75 G and can be biased.
+#'    The fitted transformation is applied to every row of `tag$magnetic`.
+#' 5. **Perform tilt compensation.** Pitch and roll are computed from the
+#'    acceleration, then the acceleration and calibrated magnetic vectors are rotated
+#'    into the Earth frame. Flight samples (non-integer `stap_id`) use the mean
+#'    acceleration of their flight, which removes most of the wingbeat-induced tilt
+#'    error of single snapshots.
 #' 6. **Compute and store outputs.** Field intensity, inclination, heading,
 #'    calibration data, and fitted parameters are stored in the returned tag.
 #'
@@ -36,12 +43,12 @@
 #'        If `TRUE`, uses calibration data from the `magCalib/` subfolder of the
 #'        tag directory.
 #'        If `FALSE`, calibrates using field-data calibration.
-#'        If a character path, uses calibration data from that directory, which
-#'        must exist.
-#'        If a data frame, uses it directly as the calibration dataset.
-#'        If `NULL`, uses `magCalib/` when it exists and field data otherwise.
-#' @param calib_method Character. Calibration method, one of `"sphere"`, `"ellipse"`,
-#'        `"near-sphere"`, `"sphere_stap"`, or `"ellipse_stap"`. If `NULL`, chosen automatically.
+#'        If a character path, uses calibration data from the specified directory.
+#'        If a data frame, uses it directly as the calibration dataset (`date`,
+#'        `magnetic_x/y/z`, `acceleration_x/y/z` and optionally `is_static` and `stap_id`).
+#'        If `NULL`, auto-detects calibration folder.
+#' @param calib_method Character. `"ellipse"` (default) corrects hard- and soft-iron
+#'   effects, `"sphere"` only the hard-iron offset.
 #' @param rm_outlier Logical. If `TRUE`, applies the magnetic calibration-data
 #'   filters described in **Workflow and argument use**.
 #' @param static_thr_hard Numeric. Hard threshold around 1 g used when classifying static
@@ -49,8 +56,8 @@
 #' @param static_thr_outlier Numeric. MAD threshold used to remove outliers among candidate static
 #'   samples. Passed to [tag_static()].
 #' @param quiet Logical. If `TRUE`, suppresses progress messages.
-#' @param calib_thr_extreme Numeric. Upper threshold on the raw magnetic vector norm
-#'   (`sqrt(x^2 + y^2 + z^2)`) used when `rm_outlier = TRUE`.
+#' @param calib_thr_extreme Numeric. Maximum absolute difference (G) between the raw magnetic
+#'   norm (`sqrt(x^2 + y^2 + z^2)`) and its median, used when `rm_outlier = TRUE`.
 #'
 #' @return Modified `GeoPressureR` tag object. The `$magnetic` data frame contains:
 #'   - `date`: Timestamp (POSIXct or numeric)
@@ -83,7 +90,7 @@
 geomag_calib <- function(
   tag,
   calib_data = NULL,
-  calib_method = NULL,
+  calib_method = c("ellipse", "sphere"),
   rm_outlier = TRUE,
   static_thr_hard = 0.1,
   static_thr_outlier = 3,
@@ -91,6 +98,23 @@ geomag_calib <- function(
   calib_thr_extreme = 1
 ) {
   GeoPressureR::tag_assert(tag, "magnetic")
+  # Methods retired in GeoMagR 0.3.0 map to the gravity-aided fit
+  retired <- c(
+    "near-sphere",
+    "sphere_stap",
+    "ellipse_stap",
+    "sphere_dip",
+    "ellipse_dip"
+  )
+  if (length(calib_method) == 1 && calib_method %in% retired) {
+    new <- if (startsWith(calib_method, "sphere")) "sphere" else "ellipse"
+    cli::cli_warn(
+      "{.code calib_method = \"{calib_method}\"} was retired in GeoMagR 0.3.0 and replaced by {.val {new}}."
+    )
+    calib_method <- new
+  }
+  calib_method <- match.arg(calib_method)
+  acc_cols <- c("acceleration_x", "acceleration_y", "acceleration_z")
 
   # 1. Classify static samples
   tag <- tag_static(
@@ -99,6 +123,21 @@ geomag_calib <- function(
     static_thr_outlier = static_thr_outlier
   )
   mag <- tag$magnetic
+
+  # Tilt acceleration: flight samples use the mean acceleration of their flight. A single
+  # snapshot during flapping flight mixes gravity with wingbeat acceleration.
+  acc <- as.matrix(mag[, acc_cols])
+  fl <- if ("stap_id" %in% names(mag)) {
+    which(mag$stap_id %% 1 != 0)
+  } else {
+    integer(0)
+  }
+  if (length(fl) > 0) {
+    g <- floor(mag$stap_id[fl])
+    acc_m <- rowsum(acc[fl, , drop = FALSE], g, na.rm = TRUE) /
+      as.vector(rowsum(rep(1, length(g)), g))
+    acc[fl, ] <- acc_m[match(g, as.numeric(rownames(acc_m))), ]
+  }
 
   # 2. Select calibration data
   if (is.null(calib_data)) {
@@ -109,11 +148,6 @@ geomag_calib <- function(
       calib_data <- FALSE
     }
   } else if (is.character(calib_data)) {
-    if (!dir.exists(calib_data)) {
-      cli::cli_abort(
-        "Calibration directory {.path {calib_data}} does not exist."
-      )
-    }
     directory <- calib_data
     calib_data <- TRUE
   } else if (isTRUE(calib_data)) {
@@ -121,6 +155,11 @@ geomag_calib <- function(
   }
 
   if (isTRUE(calib_data)) {
+    if (!dir.exists(directory)) {
+      cli::cli_abort(
+        "Calibration directory {.path {directory}} does not exist."
+      )
+    }
     tag_calib <- GeoPressureR::tag_create(
       "",
       manufacturer = "soi",
@@ -144,22 +183,75 @@ geomag_calib <- function(
   } else {
     mag_calib <- mag[,
       intersect(
-        c("date", "magnetic_x", "magnetic_y", "magnetic_z", "stap_id"),
+        c(
+          "date",
+          "magnetic_x",
+          "magnetic_y",
+          "magnetic_z",
+          acc_cols,
+          "is_static",
+          "stap_id"
+        ),
         names(mag)
       )
     ]
     cli::cli_alert_info("Using raw magnetic data for calibration data")
   }
+  # Static samples only (acceleration = gravity) with a stationary period when available
+  if ("is_static" %in% names(mag_calib)) {
+    mag_calib <- mag_calib[mag_calib$is_static %in% TRUE, ]
+  }
+  # Without any labelled stationary period, group by day instead
+  if ("stap_id" %in% names(mag_calib)) {
+    mag_calib <- if (all(is.na(mag_calib$stap_id))) {
+      mag_calib[names(mag_calib) != "stap_id"]
+    } else {
+      mag_calib[!is.na(mag_calib$stap_id), ]
+    }
+  }
+  # Add the samples of flights with at least 12 samples, with the flight-mean acceleration as
+  # gravity. Static samples are thinned to 3x the flight samples.
+  if (isFALSE(calib_data) && length(fl) > 0) {
+    flc <- fl[stats::ave(g, g, FUN = length) >= 12]
+    if (length(flc) > 0) {
+      mf <- mag[flc, names(mag_calib)]
+      mf[, acc_cols] <- acc[flc, ]
+      mf$stap_id <- floor(mf$stap_id)
+      mf$is_static <- TRUE
+      k <- unique(round(seq(
+        1,
+        nrow(mag_calib),
+        length.out = min(nrow(mag_calib), 3 * nrow(mf))
+      )))
+      mag_calib <- rbind(mag_calib[k, ], mf)
+    }
+  }
 
   # 3. Filter calibration samples
   n_calib <- nrow(mag_calib)
-  mag_calib <- mag_calib[
-    stats::complete.cases(
-      mag_calib[, c("magnetic_x", "magnetic_y", "magnetic_z")]
-    ),
-  ]
   if (rm_outlier) {
-    mag_calib <- geomag_calib_rm(mag_calib, tag, calib_thr_extreme)
+    # Spikes: the raw norm is far from its median (not from 1 G, as tags with a large hard-iron
+    # offset have raw norms above 1 G)
+    mn <- sqrt(
+      mag_calib$magnetic_x^2 + mag_calib$magnetic_y^2 + mag_calib$magnetic_z^2
+    )
+    mag_calib <- mag_calib[
+      abs(mn - stats::median(mn, na.rm = TRUE)) < calib_thr_extreme,
+    ]
+  }
+  mag_calib <- mag_calib[
+    stats::complete.cases(mag_calib[, c(
+      "magnetic_x",
+      "magnetic_y",
+      "magnetic_z",
+      acc_cols
+    )]),
+  ]
+  if (nrow(mag_calib) < 10) {
+    cli::cli_abort(c(
+      "x" = "Fewer than 10 static calibration samples are left after filtering.",
+      ">" = "Check the magnetic sensor and the static classification ({.arg static_thr_hard})."
+    ))
   }
   if (nrow(mag_calib) < n_calib / 2) {
     cli::cli_warn(
@@ -167,39 +259,28 @@ geomag_calib <- function(
     )
   }
 
-  # 4. Choose and fit the calibration model
-  if (is.null(calib_method)) {
-    has_known_stap <- "stap_id" %in%
-      names(mag_calib) &&
-      !is.null(tag$stap) &&
-      "known_lat" %in% names(tag$stap) &&
-      !all(is.na(tag$stap$known_lat))
-    if (has_known_stap) {
-      calib_method <- "ellipse_stap"
-    } else {
-      calib_method <- "ellipse"
-    }
-  }
-  if (grepl("_stap$", calib_method) && !"stap_id" %in% names(mag_calib)) {
-    cli::cli_abort(c(
-      "x" = "{.arg calib_method} {.val {calib_method}} requires {.field stap_id} in magnetic data.",
-      ">" = "Use a non-stap method (e.g. {.val ellipse}) or provide magnetic data with {.field stap_id}."
-    ))
-  }
-
+  # 4. Fit the calibration model
   mag <- geomag_calib_fit(
     mag = mag,
     mag_calib = mag_calib,
     method = calib_method,
-    stap = tag$stap,
-    control = list(maxit = 10000, trace = as.integer(!quiet), REPORT = 10)
+    stap = tag$stap
   )
+  if (
+    !quiet &&
+      isFALSE(calib_data) &&
+      attr(mag, "geomag_calib")$optim$n_known == 0
+  ) {
+    cli::cli_alert_warning(
+      "No stationary period with known location: the intensity is not anchored to the WMM and can be biased."
+    )
+  }
 
   # 5. Perform tilt compensation
-  gn <- sqrt(mag$acceleration_x^2 + mag$acceleration_y^2 + mag$acceleration_z^2)
+  gn <- sqrt(rowSums(acc^2))
 
-  mag$pitch <- asin(-mag$acceleration_x / gn)
-  mag$roll <- atan2(mag$acceleration_y / gn, mag$acceleration_z / gn)
+  mag$pitch <- asin(-acc[, 1] / gn)
+  mag$roll <- atan2(acc[, 2] / gn, acc[, 3] / gn)
 
   gr <- geomag_calib_rotate(
     matrix(
@@ -251,64 +332,6 @@ geomag_calib <- function(
   return(tag)
 }
 
-
-#' @noRd
-geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
-  # Remove raw norms above calib_thr_extreme
-  mn <- sqrt(
-    mag_calib$magnetic_x^2 + mag_calib$magnetic_y^2 + mag_calib$magnetic_z^2
-  )
-  mag_calib <- mag_calib[mn < calib_thr_extreme, ]
-  if (nrow(mag_calib) == 0) {
-    cli::cli_abort(c(
-      "x" = "No calibration data left after removing extreme values.",
-      ">" = "Check the magnetic sensor unit for issues."
-    ))
-  }
-
-  # Estimate the offset with a preliminary sphere fit
-  mag_tmp <- geomag_calib_fit(
-    mag = tag$magnetic,
-    mag_calib = mag_calib,
-    method = "sphere",
-    stap = tag$stap
-  )
-  offset <- attr(mag_tmp, "geomag_calib")$offset
-
-  # Retain centered norms within fixed physical limits
-  mn <- sqrt(
-    (mag_calib$magnetic_x - offset[1])^2 +
-      (mag_calib$magnetic_y - offset[2])^2 +
-      (mag_calib$magnetic_z - offset[3])^2
-  )
-  mag_calib <- mag_calib[mn > 0.25 & mn < 0.65, ]
-
-  # Remove MAD outliers within stap groups when available
-  mn <- sqrt(
-    (mag_calib$magnetic_x - offset[1])^2 +
-      (mag_calib$magnetic_y - offset[2])^2 +
-      (mag_calib$magnetic_z - offset[3])^2
-  )
-  if ("stap_id" %in% names(mag_calib)) {
-    G <- round(mag_calib$stap_id)
-    split_df <- split(mn, G)
-    result <- lapply(split_df, is_outlier)
-    mag_calib <- mag_calib[!unsplit(result, G), ]
-  } else {
-    mag_calib <- mag_calib[!is_outlier(mn), ]
-  }
-
-  # Require enough remaining calibration points
-  if (nrow(mag_calib) < 10) {
-    cli::cli_abort(c(
-      "x" = "Removal of outliers left no calibration data."
-    ))
-  }
-
-  mag_calib
-}
-
-
 #' Classify Static and Moving Samples From Acceleration
 #'
 #' @description
@@ -333,7 +356,7 @@ geomag_calib_rm <- function(mag_calib, tag, calib_thr_extreme = 1) {
 #'   `use_activity = TRUE`, the `value` column of `tag$acceleration` is used as
 #'   an activity signal.
 #' @param static_thr_hard Numeric or `NULL`. Hard threshold around 1 g used to
-#'   build the initial candidate static set. If `NULL`, the default `0.15` is
+#'   build the initial candidate static set. If `NULL`, the default `0.1` is
 #'   used.
 #' @param static_thr_outlier Numeric or `NULL`. MAD threshold used to remove
 #'   outliers among the candidate static samples. If `NULL`, the default `3` is
@@ -377,7 +400,7 @@ tag_static <- function(
   }
 
   if (is.null(static_thr_hard)) {
-    static_thr_hard <- 0.15
+    static_thr_hard <- 0.1
   }
   if (is.null(static_thr_outlier)) {
     static_thr_outlier <- 3

@@ -98,14 +98,11 @@ the main magnetic quantities of interest: intensity `F`, inclination `I`, and he
 The function performs tilt compensation and magnetic calibration, with additional pre- and
 post-processing steps documented in the help page.
 
-For `14DM`, we do not have laboratory calibration data, so we use field-data calibration with
-`calib_method = "ellipse_stap"`, which fits one ellipsoid shared by all stationary periods.
-This method also uses the stationary periods with a known location to compare the calibrated
-intensity with the World Magnetic Model, so we first define the map and the known location (the
-breeding site, at the first and last stationary periods) with
-[`tag_set_map()`](https://geopressure.org/GeoPressureR/reference/tag_set_map.html). The same map
-settings are used later by
-[`geomag_map()`](https://geopressure.org/GeoMagR/reference/geomag_map.html).
+For `14DM`, we do not have laboratory calibration data, so we use field-data calibration. The
+static samples of each stationary period constrain the calibration ellipsoid
+(`calib_method = "ellipse"`, the default), and the known equipment site anchors it to the WMM
+field. We therefore first define the known site, together with the map extent used in section 5,
+with [`tag_set_map()`](https://geopressure.org/GeoPressureR/reference/tag_set_map.html).
 
 ```{r}
 tag <- tag_set_map(
@@ -118,13 +115,10 @@ tag <- tag_set_map(
     known_lat = 46.19
   )
 )
-```
 
-```{r}
 tag <- geomag_calib(
   tag,
   calib_data = FALSE, # use field-data calibration
-  calib_method = "ellipse_stap",
   rm_outlier = TRUE,
   quiet = TRUE
 )
