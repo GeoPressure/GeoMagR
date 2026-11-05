@@ -7,7 +7,7 @@
 geomag_calib(
   tag,
   calib_data = NULL,
-  calib_method = NULL,
+  calib_method = c("ellipse", "sphere"),
   rm_outlier = TRUE,
   static_thr_hard = 0.1,
   static_thr_outlier = 3,
@@ -22,13 +22,13 @@ geomag_calib(
 If \code{TRUE}, uses calibration data from the \verb{magCalib/} subfolder of the
 tag directory.
 If \code{FALSE}, calibrates using field-data calibration.
-If a character path, uses calibration data from that directory, which
-must exist.
-If a data frame, uses it directly as the calibration dataset.
-If \code{NULL}, uses \verb{magCalib/} when it exists and field data otherwise.}
+If a character path, uses calibration data from the specified directory.
+If a data frame, uses it directly as the calibration dataset (\code{date},
+\code{magnetic_x/y/z}, \code{acceleration_x/y/z} and optionally \code{is_static} and \code{stap_id}).
+If \code{NULL}, auto-detects calibration folder.}
 
-\item{calib_method}{Character. Calibration method, one of \code{"sphere"}, \code{"ellipse"},
-\code{"near-sphere"}, \code{"sphere_stap"}, or \code{"ellipse_stap"}. If \code{NULL}, chosen automatically.}
+\item{calib_method}{Character. \code{"ellipse"} (default) corrects hard- and soft-iron
+effects, \code{"sphere"} only the hard-iron offset.}
 
 \item{rm_outlier}{Logical. If \code{TRUE}, applies the magnetic calibration-data
 filters described in \strong{Workflow and argument use}.}
@@ -41,8 +41,8 @@ samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
 
 \item{quiet}{Logical. If \code{TRUE}, suppresses progress messages.}
 
-\item{calib_thr_extreme}{Numeric. Upper threshold on the raw magnetic vector norm
-(\code{sqrt(x^2 + y^2 + z^2)}) used when \code{rm_outlier = TRUE}.}
+\item{calib_thr_extreme}{Numeric. Maximum absolute difference (G) between the raw magnetic
+norm (\code{sqrt(x^2 + y^2 + z^2)}) and its median, used when \code{rm_outlier = TRUE}.}
 }
 \value{
 Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contains:
@@ -73,26 +73,33 @@ computes magnetic field intensity, inclination, and heading.
 \subsection{Workflow and argument use}{
 \enumerate{
 \item \strong{Classify static samples.} \code{\link[=tag_static]{tag_static()}} adds \code{is_static} to the
-magnetic data using \code{static_thr_hard} and \code{static_thr_outlier}. These
-arguments only control the static classification; \code{is_static} is not used
-to select observations for the calibration fit.
+magnetic data using \code{static_thr_hard} and \code{static_thr_outlier}. Only static
+samples are used for the calibration fit, because their acceleration is the
+gravity direction.
 \item \strong{Select calibration data.} \code{calib_data} selects a dedicated calibration
-dataset, a supplied data frame, or the field data in \code{tag$magnetic}.
-\item \strong{Filter calibration samples.} Rows with incomplete magnetic axes are
-always removed first. When \code{rm_outlier = TRUE}, \code{calib_thr_extreme} then
-removes observations with a large raw magnetic vector norm. A preliminary
-sphere fit is then used to retain centered norms between 0.25 and 0.65
-and to remove MAD outliers, within stationary periods when \code{stap_id} is
-available. This MAD filter is independent of \code{static_thr_outlier}.
-\item \strong{Choose and fit the calibration model.} \code{calib_method} selects the
-sphere, ellipsoid, or stationary-period model. If it is \code{NULL},
-\code{"ellipse_stap"} is selected when the calibration data contain \code{stap_id}
-and \code{tag$stap} contains known latitudes; otherwise, \code{"ellipse"} is used.
-The fitted transformation is applied to every row of \code{tag$magnetic}, not
-only static samples.
-\item \strong{Perform tilt compensation.} Pitch and roll are computed from
-acceleration, then the acceleration and calibrated magnetic vectors are
-rotated into the Earth frame.
+dataset, a supplied data frame, or the field data in \code{tag$magnetic}. With field
+data and \code{stap_id}, the samples of flights with at least 12 samples (e.g. 1 h at
+5 min) are added with the flight-mean acceleration as gravity direction: birds
+that rest in a single orientation (e.g. owls) only rotate in flight. Static
+samples are then thinned to three times the flight samples.
+\item \strong{Filter calibration samples.} When \code{rm_outlier = TRUE}, samples whose raw
+magnetic norm differs from the median raw norm by more than \code{calib_thr_extreme}
+are removed (spikes). Rows with incomplete magnetic axes are removed regardless
+of \code{rm_outlier}.
+\item \strong{Fit the calibration model.} The hard-iron offset (and the soft-iron shape for
+\code{calib_method = "ellipse"}) is fitted so that, within each stationary period (or
+day without \code{stap_id}), the field intensity and the inclination measured against
+the acceleration are constant. Stationary periods of known location
+(\code{tag$stap$known_lat}) are anchored to the WMM intensity and inclination. The
+sensor scale is kept, which avoids the degenerate fits of free-scale sphere or
+ellipsoid fits when the bird only adopts a few orientations. Without any known
+stationary period, the intensity is only bounded to 0.18-0.75 G and can be biased.
+The fitted transformation is applied to every row of \code{tag$magnetic}.
+\item \strong{Perform tilt compensation.} Pitch and roll are computed from the
+acceleration, then the acceleration and calibrated magnetic vectors are rotated
+into the Earth frame. Flight samples (non-integer \code{stap_id}) use the mean
+acceleration of their flight, which removes most of the wingbeat-induced tilt
+error of single snapshots.
 \item \strong{Compute and store outputs.} Field intensity, inclination, heading,
 calibration data, and fitted parameters are stored in the returned tag.
 }
