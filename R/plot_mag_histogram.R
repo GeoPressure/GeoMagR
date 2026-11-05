@@ -64,8 +64,8 @@ plot_mag_histogram <- function(tag, cols, stap_id, path) {
     )
 
   df <- rbind(
-    err |> dplyr::mutate(type = "observation (\\u03c3_e)"),
-    err_stap |> dplyr::mutate(type = "stap (\\u03c3_m)")
+    err |> dplyr::mutate(type = "observation (\u03c3_e)"),
+    err_stap |> dplyr::mutate(type = "stap (\u03c3_m)")
   )
 
   sds <- df |>
