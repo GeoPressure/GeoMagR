@@ -179,7 +179,8 @@ plot_mag_timeseries <- function(tag, cols, stap_id, path) {
       is_outlier <- identical(nm, "Outlier")
       if (is_outlier) {
         ax <- p_plotly$x$data[[i]]$yaxis
-        panel <- if (identical(ax, "y2")) "F" else "I"
+        # Facets are sorted alphabetically: F on top (y), I below (y2).
+        panel <- if (identical(ax, "y2")) "I" else "F"
         nm <- paste0("Outlier (", panel, ")")
       }
       p_plotly$x$data[[i]]$name <- nm
