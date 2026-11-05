@@ -75,7 +75,7 @@ geomag_map <- function(
   sd_e_i = 2.6,
   sd_m_f = 0.014,
   sd_m_i = 3.5,
-  ref_map = geomag_map_ref(tag),
+  ref_map = geomag_map_ref(tag, quiet = quiet),
   quiet = FALSE
 ) {
   GeoPressureR::tag_assert(tag, "setmap")
