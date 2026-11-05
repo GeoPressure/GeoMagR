@@ -98,14 +98,35 @@ the main magnetic quantities of interest: intensity `F`, inclination `I`, and he
 The function performs tilt compensation and magnetic calibration, with additional pre- and
 post-processing steps documented in the help page.
 
-For `14DM`, we do not have laboratory calibration data, so we use field-data calibration with `calib_method = "ellipse_stap"` because stationary period information is available.
+For `14DM`, we do not have laboratory calibration data, so we use field-data calibration with
+`calib_method = "ellipse_stap"`, which fits one ellipsoid shared by all stationary periods.
+This method also uses the stationary periods with a known location to compare the calibrated
+intensity with the World Magnetic Model, so we first define the map and the known location (the
+breeding site, at the first and last stationary periods) with
+[`tag_set_map()`](https://geopressure.org/GeoPressureR/reference/tag_set_map.html). The same map
+settings are used later by
+[`geomag_map()`](https://geopressure.org/GeoMagR/reference/geomag_map.html).
+
+```{r}
+tag <- tag_set_map(
+  tag,
+  extent = c(-18, 23, 0, 50),
+  scale = 2,
+  known = data.frame(
+    stap_id = c(1, -1),
+    known_lon = 7.27,
+    known_lat = 46.19
+  )
+)
+```
 
 ```{r}
 tag <- geomag_calib(
   tag,
   calib_data = FALSE, # use field-data calibration
   calib_method = "ellipse_stap",
-  rm_outlier = TRUE
+  rm_outlier = TRUE,
+  quiet = TRUE
 )
 ```
 
@@ -125,14 +146,14 @@ the full list.
 head(tag$magnetic) |> knitr::kable()
 ```
 
-First, the calibrated magnetic data `tag$magnetic_*c`. The measurements are now centered on the origin and lie on a
+First, the calibrated magnetic data `tag$magnetic$magnetic_*c`. The measurements are now centered on the origin and lie on a
 regular sphere, with a radius that still varies slightly by stationary period.
 
 ```{r}
 plot_mag(tag, type = "magnetic_c")
 ```
 
-The reprojected corrected magnetic data `tag$magnetic_*cp` shows the magnetic field in the horizontal plane of the
+The reprojected corrected magnetic data `tag$magnetic$magnetic_*cp` shows the magnetic field in the horizontal plane of the
 Earth frame after tilt compensation. The ellipsoid rings are now horizontal, correcting for the bird position.
 
 ```{r}
@@ -149,32 +170,16 @@ plot_mag(tag, type = "timeseries")
 
 ## 5. Compute the magnetic likelihood map
 
-Once the tag has been calibrated and the map extent has been defined,
+Now that the tag is calibrated and the map has been defined with `tag_set_map()`,
 [`geomag_map()`](https://geopressure.org/GeoMagR/reference/geomag_map.html) can compare the
 observed field against the World Magnetic Model.
-
-First, we define the spatio-temporal parameters of the map with
-[`tag_set_map()`](https://geopressure.org/GeoPressureR/reference/tag_set_map.html).
-
-```{r}
-tag <- tag_set_map(
-  tag,
-  extent = c(-18, 23, 0, 50),
-  scale = 2,
-  known = data.frame(
-    stap_id = c(1, -1),
-    known_lon = 7.27,
-    known_lat = 46.19
-  )
-)
-```
 
 This reference map is normally computed automatically inside
 [`geomag_map()`](https://geopressure.org/GeoMagR/reference/geomag_map.html), but we show it
 explicitly here for clarity.
 
 ```{r}
-ref_map = geomag_map_ref(tag)
+ref_map <- geomag_map_ref(tag)
 ```
 
 ```{r}

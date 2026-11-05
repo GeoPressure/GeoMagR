@@ -75,8 +75,8 @@ Here we compute magnetic, light, and pressure maps in sequence.
 We start with magnetic calibration and magnetic likelihood maps:
 
 ```{r}
-tag <- geomag_calib(tag)
-tag <- geomag_map(tag)
+tag <- geomag_calib(tag, quiet = TRUE)
+tag <- geomag_map(tag, quiet = TRUE)
 ```
 
 Then we compute the light and pressure likelihood maps:
