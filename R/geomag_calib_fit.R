@@ -498,7 +498,7 @@ geomag_calib_fit <- function(
     optim_info$convergence <- result$convergence
     optim_info$value <- result$value
     optim_info$counts <- result$counts
-    optim_info$message <- result$message %||% NA_character_
+    optim_info$message <- if (is.null(result$message)) NA_character_ else result$message
   }
 
   # Attach metric as attribute
