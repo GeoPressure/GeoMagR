@@ -107,7 +107,10 @@ geomag_calib <- function(
     } else {
       calib_data <- FALSE
     }
-  } else if (is.character(calib_data) && dir.exists(calib_data)) {
+  } else if (is.character(calib_data)) {
+    if (!dir.exists(calib_data)) {
+      cli::cli_abort("Calibration directory {.path {calib_data}} does not exist.")
+    }
     directory <- calib_data
     calib_data <- TRUE
   } else if (isTRUE(calib_data)) {
