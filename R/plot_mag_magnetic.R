@@ -37,7 +37,7 @@ plot_mag_magnetic <- function(
 
   title <- switch(
     variant,
-    raw = glue::glue("Raw magnetic"),
+    raw = "Raw magnetic",
     corr = "Magnetic corrected with calibration",
     corr_proj = "Magnetic corrected and projected"
   )
