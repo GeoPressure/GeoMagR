@@ -250,7 +250,10 @@ geomag_map_ref <- function(tag, quiet = FALSE) {
   m <- expand.grid(lat = g$lat, lon = g$lon)
 
   if (!quiet) {
-    pb <- cli::cli_progress_bar("Calculating Magnetic Field map", total = nrow(m))
+    pb <- cli::cli_progress_bar(
+      "Calculating Magnetic Field map",
+      total = nrow(m)
+    )
   }
   map_mag <- mapply(
     \(loni, lati) {
@@ -306,7 +309,10 @@ clean_I <- function(mag) {
   # Apply robust outlier filtering within each stationary period, unless all samples carry the
   # fallback stap_id 1. Kept rows already have a finite value and an integer stap_id.
   if (
-    "stap_id" %in% names(mag) && any(keep) && !all(stats::na.omit(mag$stap_id) == 1)
+    "stap_id" %in%
+      names(mag) &&
+      any(keep) &&
+      !all(stats::na.omit(mag$stap_id) == 1)
   ) {
     G <- mag$stap_id[keep]
     keep[keep] <- !unsplit(lapply(split(mag$I[keep], G), is_outlier), G)
@@ -327,7 +333,10 @@ clean_F <- function(mag) {
   # Apply robust outlier filtering within each stationary period, unless all samples carry the
   # fallback stap_id 1. Kept rows already have a finite value and an integer stap_id.
   if (
-    "stap_id" %in% names(mag) && any(keep) && !all(stats::na.omit(mag$stap_id) == 1)
+    "stap_id" %in%
+      names(mag) &&
+      any(keep) &&
+      !all(stats::na.omit(mag$stap_id) == 1)
   ) {
     G <- mag$stap_id[keep]
     keep[keep] <- !unsplit(lapply(split(mag$F[keep], G), is_outlier), G)
