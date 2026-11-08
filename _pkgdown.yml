@@ -1,6 +1,7 @@
 url: https://geopressure.org/GeoMagR/
 template:
   bootstrap: 5
+  math-rendering: mathjax
   bslib:
     bootswatch: pulse
     primary: "#7c289a"

@@ -24,12 +24,8 @@
 #' 4. **Fit the calibration model.** The hard-iron offset (and the soft-iron shape for
 #'    `calib_method = "ellipse"`) is fitted so that, within each stationary period (or
 #'    day without `stap_id`), the field intensity and the inclination measured against
-#'    the acceleration are constant. Stationary periods of known location
-#'    (`tag$stap$known_lat`) are anchored to the WMM intensity and inclination. The
-#'    sensor scale is kept, which avoids the degenerate fits of free-scale sphere or
-#'    ellipsoid fits when the bird only adopts a few orientations. Without any known
-#'    stationary period, the intensity is only bounded to 0.18-0.75 G and can be biased.
-#'    The fitted transformation is applied to every row of `tag$magnetic`.
+#'    the acceleration are constant (see **Calibration model**). The fitted
+#'    transformation is applied to every row of `tag$magnetic`.
 #' 5. **Perform tilt compensation.** Pitch and roll are computed from the
 #'    acceleration, then the acceleration and calibrated magnetic vectors are rotated
 #'    into the Earth frame. Flight samples (non-integer `stap_id`) use the mean
@@ -37,6 +33,62 @@
 #'    error of single snapshots.
 #' 6. **Compute and store outputs.** Field intensity, inclination, heading,
 #'    calibration data, and fitted parameters are stored in the returned tag.
+#'
+#' ## Calibration model
+#'
+#' The notation follows Appendix A of Nussbaumer et al. (2026)
+#' (\doi{10.1111/2041-210x.70355}). The raw magnetic vector \eqn{\mathbf{B}_i}{B_i} of sample
+#' \eqn{i} is corrected for a hard-iron offset \eqn{\mathbf{o}}{o} and a soft-iron ellipsoid of
+#' rotation \eqn{\mathbf{R}}{R} and radii \eqn{\mathbf{A} = \mathrm{diag}(a_1, a_2, a_3)}{A = diag(a_1, a_2, a_3)}:
+#' \deqn{\mathbf{M}_i = \mathbf{R}^\top \mathbf{A}^{-1} \mathbf{R} (\mathbf{B}_i - \mathbf{o}),
+#' \qquad a_1 a_2 a_3 = 1.}{M_i = t(R) A^-1 R (B_i - o), with a1 a2 a3 = 1.}
+#' `"ellipse"` fits \eqn{\mathbf{o}}{o}, \eqn{\mathbf{R}}{R} and the shape of \eqn{\mathbf{A}}{A}
+#' (8 parameters); `"sphere"` fits \eqn{\mathbf{o}}{o} only (\eqn{\mathbf{R} = \mathbf{A} =
+#' \mathbf{I}}{R = A =
+#' I}). The product of the radii is 1, so the sensor scale is kept.
+#'
+#' Within a group \eqn{g} (stationary period, or day without `stap_id`) the Earth's field is
+#' fixed. The intensity \eqn{F_i = \|\mathbf{M}_i\|}{F_i = |M_i|} and the inclination, measured against the
+#' unit acceleration \eqn{\hat{\mathbf{a}}_i}{a_i} (gravity on static samples),
+#' \deqn{\sin I_i = -\frac{\mathbf{M}_i \cdot \hat{\mathbf{a}}_i}{\|\mathbf{M}_i\|},}{sin(I_i) =
+#' -(M_i . a_i) / |M_i|,}
+#' are therefore the same for every sample of the group, whatever the posture of the bird. The
+#' group values \eqn{F_g} and \eqn{\sin I_g}{sin I_g} are not free parameters: they are the group means,
+#' or the WMM values (height 0, mean date of the period) at stationary periods of known location
+#' (`tag$stap$known_lat`). The fit minimises
+#' \deqn{J(\mathbf{o}, \mathbf{R}, \mathbf{A}) = \sum_i \left[ h(r_i^F) + h(r_i^I) \right] + P_F
+#' + P_A,}{J(o, R, A) = sum_i [h(rF_i) + h(rI_i)] + P_F + P_A,}
+#' with the residuals \eqn{r_i^F = (F_i - F_{g_i}) / 0.45}{rF_i = (F_i - F_g_i) / 0.45} G and
+#' \eqn{r_i^I = \sin I_i - \sin I_{g_i}}{rI_i = sin I_i - sin I_g_i}, and the pseudo-Huber loss
+#' \eqn{h(r) = \delta^2 (\sqrt{1 + (r/\delta)^2} - 1)}{h(r) = delta^2 (sqrt1 + (r/delta)^2 - 1)}, \eqn{\delta = 0.02}{delta = 0.02}. The loss is
+#' quadratic for small residuals and linear for large ones, which limits the weight of spikes and
+#' non-static samples. The penalty \eqn{P_F} keeps \eqn{F_g} of the groups of unknown location
+#' within 0.18-0.75 G, and \eqn{P_A} (`"ellipse"` only) pulls the ellipsoid towards a sphere when
+#' the data do not constrain its shape. \eqn{J} is minimised with BFGS ([stats::optim()]) from
+#' three starting offsets (an algebraic sphere fit, and the mean raw field shifted up or down
+#' along gravity), on at most 20,000 evenly thinned samples.
+#'
+#' Give at least one stationary period with a known location (e.g. the equipment site, with
+#' `GeoPressureR::tag_set_map()`): without it, the intensity is not anchored, can be biased, and
+#' `geomag_calib()` warns.
+#'
+#' ## Diagnostics
+#'
+#' `tag$param$geomag_calib` contains `offset` (\eqn{\mathbf{o}}{o}), `rotM`
+#' (\eqn{\mathbf{R}^\top}{R'}), `radius_shape` (\eqn{a_1, a_2, a_3}), `radius_amplitude`
+#' (\eqn{F_g}, indexed by `stap_id`) and `optim`, a list with:
+#' - `n_obs`, `n_group`, `n_known`: samples, groups and groups of known location in the fit.
+#' - `rmse_F`: RMS of \eqn{r_i^F}{rF_i} (relative to 0.45 G).
+#' - `rmse_I`: RMS of \eqn{r_i^I}{rI_i}, in approximate degrees.
+#' - `fit_rmse`: RMS of \eqn{F_i / F_{g_i} - 1}.
+#' - `convergence`, `value`: [stats::optim()] convergence code (0 = converged) and final
+#'   \eqn{J}.
+#'
+#' Check that `n_known` is at least 1 and `convergence` is 0. A large `rmse_I` points to
+#' non-static samples, a poor static classification, or a tag whose orientation changed during
+#' the deployment. On a benchmark of 77 tags from 13 species (5-min to 6-hourly logging), the
+#' median static inclination error at stationary periods of unknown location was 2.1 degrees
+#' (2.3 degrees for the previous default `ellipse_stap`, which failed on 5 tags).
 #'
 #' @param tag A `GeoPressureR` tag object containing magnetic and acceleration data.
 #' @param calib_data Logical, character, data frame, or `NULL`.
@@ -75,7 +127,7 @@
 #'   - `F`: Magnetic field intensity (Gauss)
 #'   - `I`: Inclination (radian)
 #' The calibration dataset used is stored in `tag$mag_calib`, and the fitted
-#' parameters and argument values are stored in `tag$param$geomag_calib`.
+#' parameters and argument values are stored in `tag$param$geomag_calib` (see **Diagnostics**).
 #'
 #' @examples
 #' library(GeoPressureR)
