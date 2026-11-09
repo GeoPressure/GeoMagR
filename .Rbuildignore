@@ -26,4 +26,5 @@
 ^vignettes/\.quarto/.*
 ^\.DS_Store$
 ^CRAN-SUBMISSION$
-^codemeta\.json$
+^[.]?air[.]toml$
+^jarl\.toml$
