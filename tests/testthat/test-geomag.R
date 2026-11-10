@@ -107,3 +107,21 @@ test_that("geomag_map ignores samples with NA stap_id", {
   expect_true(all(is.finite(unlist(out_na$map_magnetic$data))))
   expect_equal(out_na$map_magnetic$data[-1], out$map_magnetic$data[-1])
 })
+
+test_that("geomag_calib averages flight acceleration over non-missing values", {
+  withr::with_dir(system.file("extdata", package = "GeoMagR"), {
+    tag <- GeoPressureR::tag_create("14DM", quiet = TRUE) |>
+      GeoPressureR::tag_label(quiet = TRUE)
+  })
+  fl <- which(floor(tag$magnetic$stap_id) == 2 & tag$magnetic$stap_id %% 1 != 0)
+  tag$magnetic$acceleration_x[fl[1]] <- NA
+  out <- geomag_calib(tag, quiet = TRUE)
+  acc <- colMeans(
+    tag$magnetic[fl, c("acceleration_x", "acceleration_y", "acceleration_z")],
+    na.rm = TRUE
+  )
+  expect_equal(
+    out$magnetic$pitch[fl],
+    rep(asin(-acc[[1]] / sqrt(sum(acc^2))), length(fl))
+  )
+})
