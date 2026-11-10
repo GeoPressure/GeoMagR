@@ -125,3 +125,13 @@ test_that("geomag_calib averages flight acceleration over non-missing values", {
     rep(asin(-acc[[1]] / sqrt(sum(acc^2))), length(fl))
   )
 })
+
+test_that("tag_static with activity is reproducible and keeps the RNG", {
+  withr::local_dir(system.file("extdata", package = "GeoMagR"))
+  tag <- tag_create("14DM", quiet = TRUE)
+  set.seed(1)
+  seed <- .Random.seed
+  a <- tag_static(tag, use_activity = TRUE)
+  expect_identical(.Random.seed, seed)
+  expect_identical(tag_static(tag, use_activity = TRUE), a)
+})

@@ -468,7 +468,9 @@ tag_static <- function(
   # The high-activity group is treated as moving before the final outlier cleanup.
   if (use_activity && !is.null(tag$acceleration)) {
     acc <- tag$acceleration
-    km <- stats::kmeans(acc$value[acc$value > 0], centers = 2)
+    # Start from the range instead of random centres: reproducible, and the global RNG is kept
+    v <- acc$value[acc$value > 0]
+    km <- stats::kmeans(v, centers = range(v))
     # Match by date to keep the row order of tag$magnetic (merge() sorts by date).
     is_static[acc$value[match(mag$date, acc$date)] > mean(km$centers)] <- FALSE
   }
