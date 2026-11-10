@@ -187,7 +187,7 @@ geomag_calib <- function(
   if (length(fl) > 0) {
     g <- floor(mag$stap_id[fl])
     acc_m <- rowsum(acc[fl, , drop = FALSE], g, na.rm = TRUE) /
-      as.vector(rowsum(rep(1, length(g)), g))
+      rowsum(1 * !is.na(acc[fl, , drop = FALSE]), g)
     acc[fl, ] <- acc_m[match(g, as.numeric(rownames(acc_m))), ]
   }
 
