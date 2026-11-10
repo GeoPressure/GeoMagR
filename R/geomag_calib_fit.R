@@ -208,17 +208,9 @@ geomag_calib_to_calibrated <- function(
   xyz <- xyz %*% rotM
   xyz <- sweep(xyz, 2, radius_shape, "/")
 
+  # Scalar or one amplitude per row (recycled down the columns)
   if (!is.null(radius_amplitude)) {
-    if (length(radius_amplitude) == 1L) {
-      xyz <- xyz / radius_amplitude
-    } else {
-      xyz <- xyz /
-        matrix(
-          rep(radius_amplitude, each = ncol(xyz)),
-          ncol = ncol(xyz),
-          byrow = TRUE
-        )
-    }
+    xyz <- xyz / radius_amplitude
   }
 
   if (rotate_back) {
