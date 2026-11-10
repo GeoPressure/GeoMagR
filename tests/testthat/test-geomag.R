@@ -149,3 +149,59 @@ test_that("geomag_map records unknown provenance of a ref_map without attribute"
 
   expect_identical(out$param$geomag_map$ref_map$wmm_version, NA_character_)
 })
+
+test_that("geomag_calib keeps only flight samples within flight_window of a stop", {
+  rot <- getFromNamespace("rot", "GeoMagR")
+  set.seed(1)
+  # Three one-day stationary periods at 5 min joined by 10-h flights across a field gradient
+  frac <- (1:120) / 121
+  stap_id <- c(rep(1, 288), 1 + frac, rep(2, 288), 2 + frac, rep(3, 288))
+  fl <- stap_id %% 1 != 0
+  F_true <- c(0.48, 0.40, 0.32)
+  Fi <- stats::approx(1:3, F_true, stap_id)$y
+  Ii <- stats::approx(1:3, c(64, 45, 25) * pi / 180, stap_id)$y
+  date <- as.POSIXct("2020-01-01", tz = "UTC") + (seq_along(stap_id) - 1) * 300
+  stap <- data.frame(
+    stap_id = 1:3,
+    start = date[match(1:3, stap_id)],
+    end = date[length(stap_id) + 1 - match(1:3, rev(stap_id))]
+  )
+  # Random orientation at rest, level flight with random heading and zero-mean wingbeat
+  xyz <- vapply(
+    seq_along(date),
+    \(i) {
+      R <- if (fl[i]) rot(0, 0, stats::runif(1, 0, 2 * pi)) else rot(stats::runif(3, -pi, pi))
+      c(t(R) %*% c(0, 0, 1), t(R) %*% (Fi[i] * c(cos(Ii[i]), 0, -sin(Ii[i]))))
+    },
+    numeric(6)
+  ) |>
+    t()
+  tag <- structure(
+    list(
+      param = list(),
+      magnetic = data.frame(
+        date = date,
+        acceleration_x = xyz[, 1],
+        acceleration_y = xyz[, 2],
+        acceleration_z = xyz[, 3] + fl * c(0.6, -0.6),
+        magnetic_x = xyz[, 4] + 0.1,
+        magnetic_y = xyz[, 5] - 0.05,
+        magnetic_z = xyz[, 6] + 0.2,
+        stap_id = stap_id
+      ),
+      stap = stap
+    ),
+    class = "tag"
+  )
+  err <- \(out) max(abs(out$param$geomag_calib$radius_amplitude - F_true))
+
+  out <- geomag_calib(tag, calib_data = FALSE, quiet = TRUE)
+  expect_equal(out$param$geomag_calib$flight_window, 1)
+  expect_equal(sum(out$mag_calib$date %in% date[fl]), 44)
+  expect_lt(err(out), 0.001)
+  expect_gt(err(geomag_calib(tag, calib_data = FALSE, quiet = TRUE, flight_window = Inf)), 0.003)
+
+  out0 <- geomag_calib(tag, calib_data = FALSE, quiet = TRUE, flight_window = 0)
+  expect_false(any(out0$mag_calib$date %in% date[fl]))
+  expect_lt(err(out0), 1e-6)
+})

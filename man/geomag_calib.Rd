@@ -12,7 +12,8 @@ geomag_calib(
   static_thr_hard = 0.1,
   static_thr_outlier = 3,
   quiet = FALSE,
-  calib_thr_extreme = 1
+  calib_thr_extreme = 1,
+  flight_window = 1
 )
 }
 \arguments{
@@ -43,6 +44,12 @@ samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
 
 \item{calib_thr_extreme}{Numeric. Maximum absolute difference (G) between the raw magnetic
 norm (\code{sqrt(x^2 + y^2 + z^2)}) and its median, used when \code{rm_outlier = TRUE}.}
+
+\item{flight_window}{Numeric. Time (hours) after the end and before the start of a
+stationary period within which flight samples join its group in the calibration fit (see
+\strong{Workflow and argument use}). The field changes little within about 1 h of the stop, while
+farther samples of a long flight would bias the field of the group. \code{0} adds no flight
+samples.}
 }
 \value{
 Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contains:
@@ -78,10 +85,14 @@ samples are used for the calibration fit, because their acceleration is the
 gravity direction.
 \item \strong{Select calibration data.} \code{calib_data} selects a dedicated calibration
 dataset, a supplied data frame, or the field data in \code{tag$magnetic}. With field
-data and \code{stap_id}, the samples of flights with at least 12 samples (e.g. 1 h at
-5 min) are added with the flight-mean acceleration as gravity direction: birds
-that rest in a single orientation (e.g. owls) only rotate in flight. Static
-samples are then thinned to three times the flight samples.
+data and \code{stap_id}, flights with at least 12 samples (e.g. 1 h at 5 min) add
+their samples within \code{flight_window} hours of a stationary period, with the
+flight-mean acceleration as gravity direction: birds that rest in a single
+orientation (e.g. owls) only rotate in flight. Samples within \code{flight_window}
+hours after the end of the previous stationary period join its group, those
+within \code{flight_window} hours before the start of the next one join that group,
+and the other flight samples are not used, as the field changes along the
+flight. Static samples are then thinned to three times the flight samples.
 \item \strong{Filter calibration samples.} When \code{rm_outlier = TRUE}, samples whose raw
 magnetic norm differs from the median raw norm by more than \code{calib_thr_extreme}
 are removed (spikes). Rows with incomplete magnetic axes are removed regardless

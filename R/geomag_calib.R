@@ -13,10 +13,14 @@
 #'    gravity direction.
 #' 2. **Select calibration data.** `calib_data` selects a dedicated calibration
 #'    dataset, a supplied data frame, or the field data in `tag$magnetic`. With field
-#'    data and `stap_id`, the samples of flights with at least 12 samples (e.g. 1 h at
-#'    5 min) are added with the flight-mean acceleration as gravity direction: birds
-#'    that rest in a single orientation (e.g. owls) only rotate in flight. Static
-#'    samples are then thinned to three times the flight samples.
+#'    data and `stap_id`, flights with at least 12 samples (e.g. 1 h at 5 min) add
+#'    their samples within `flight_window` hours of a stationary period, with the
+#'    flight-mean acceleration as gravity direction: birds that rest in a single
+#'    orientation (e.g. owls) only rotate in flight. Samples within `flight_window`
+#'    hours after the end of the previous stationary period join its group, those
+#'    within `flight_window` hours before the start of the next one join that group,
+#'    and the other flight samples are not used, as the field changes along the
+#'    flight. Static samples are then thinned to three times the flight samples.
 #' 3. **Filter calibration samples.** When `rm_outlier = TRUE`, samples whose raw
 #'    magnetic norm differs from the median raw norm by more than `calib_thr_extreme`
 #'    are removed (spikes). Rows with incomplete magnetic axes are removed regardless
@@ -110,6 +114,11 @@
 #' @param quiet Logical. If `TRUE`, suppresses progress messages.
 #' @param calib_thr_extreme Numeric. Maximum absolute difference (G) between the raw magnetic
 #'   norm (`sqrt(x^2 + y^2 + z^2)`) and its median, used when `rm_outlier = TRUE`.
+#' @param flight_window Numeric. Time (hours) after the end and before the start of a
+#'   stationary period within which flight samples join its group in the calibration fit (see
+#'   **Workflow and argument use**). The field changes little within about 1 h of the stop, while
+#'   farther samples of a long flight would bias the field of the group. `0` adds no flight
+#'   samples.
 #'
 #' @return Modified `GeoPressureR` tag object. The `$magnetic` data frame contains:
 #'   - `date`: Timestamp (POSIXct or numeric)
@@ -147,7 +156,8 @@ geomag_calib <- function(
   static_thr_hard = 0.1,
   static_thr_outlier = 3,
   quiet = FALSE,
-  calib_thr_extreme = 1
+  calib_thr_extreme = 1,
+  flight_window = 1
 ) {
   GeoPressureR::tag_assert(tag, "magnetic")
   # Methods retired in GeoMagR 0.3.0 map to the gravity-aided fit
@@ -265,14 +275,31 @@ geomag_calib <- function(
       mag_calib[!is.na(mag_calib$stap_id), ]
     }
   }
-  # Add the samples of flights with at least 12 samples, with the flight-mean acceleration as
-  # gravity. Static samples are thinned to 3x the flight samples.
+  # Add the samples of flights with at least 12 samples, with the flight-mean acceleration (whole
+  # flight) as gravity. Only samples within flight_window hours of the previous or next
+  # stationary period are kept, in the group of the nearer one: the field changes along the
+  # flight. Static samples are thinned to 3x the flight samples.
   if (isFALSE(calib_data) && length(fl) > 0) {
     flc <- fl[stats::ave(g, g, FUN = length) >= 12]
+    sp <- mag$stap_id[flc]
+    dt_prev <- difftime(
+      mag$date[flc],
+      tag$stap$end[match(floor(sp), tag$stap$stap_id)],
+      units = "hours"
+    ) |>
+      as.numeric()
+    dt_next <- difftime(
+      tag$stap$start[match(ceiling(sp), tag$stap$stap_id)],
+      mag$date[flc],
+      units = "hours"
+    ) |>
+      as.numeric()
+    near <- pmin(dt_prev, dt_next) < flight_window
+    flc <- flc[near]
     if (length(flc) > 0) {
       mf <- mag[flc, names(mag_calib)]
       mf[, acc_cols] <- acc[flc, ]
-      mf$stap_id <- floor(mf$stap_id)
+      mf$stap_id <- ifelse(dt_prev <= dt_next, floor(sp), ceiling(sp))[near]
       mf$is_static <- TRUE
       k <- unique(round(seq(
         1,
@@ -376,6 +403,7 @@ geomag_calib <- function(
   tag$param$geomag_calib$static_thr_hard <- static_thr_hard
   tag$param$geomag_calib$static_thr_outlier <- static_thr_outlier
   tag$param$geomag_calib$calib_thr_extreme <- calib_thr_extreme
+  tag$param$geomag_calib$flight_window <- flight_window
   attr(mag, "geomag_calib") <- NULL
 
   tag$mag_calib <- mag_calib
