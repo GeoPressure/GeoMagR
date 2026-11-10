@@ -203,7 +203,6 @@ geomag_calib_to_calibrated <- function(
   rotate_back = TRUE
 ) {
   xyz <- as.matrix(xyz)
-  stopifnot(ncol(xyz) == 3)
 
   xyz <- sweep(xyz, 2, offset, "-")
   xyz <- xyz %*% rotM
