@@ -1,3 +1,13 @@
+# GeoMagR (development version)
+
+- [Report `rmse_I` as the inclination angle residual](https://github.com/GeoPressure/GeoMagR/commit/2b094483b924bbdfc940b8f0a1c6f61436f46da3) in `tag$param$geomag_calib$optim`. It was the `sin(I)` residual, which understates the angle error by `cos(I)` (4.1° instead of 5.0° on `14DM`, half the true value at I = 60°). The calibration itself is unchanged.
+- [Ignore samples with `NA` `stap_id` in `geomag_map()`](https://github.com/GeoPressure/GeoMagR/commit/09c24bf3923014e1c104cba0a17e395a5e75e786): they used to turn every likelihood map into `NA`.
+- [Average the flight acceleration over non-missing values in `geomag_calib()`](https://github.com/GeoPressure/GeoMagR/commit/f7d0781affb73d1387c9804f3cc17d57550227c1): a flight with partially missing acceleration axes had a skewed gravity direction. Unchanged on `14DM`.
+- [Alert on an unanchored intensity whatever `calib_data`](https://github.com/GeoPressure/GeoMagR/commit/1ba162c4ddc02ec0fbdcd23f5fe5d808d8b3c5a2) in `geomag_calib()`: a calibration directory or data frame never anchors the intensity to the WMM, but the alert was only shown for field data.
+- [Respect `quiet = TRUE` for the calibration-data messages of `geomag_calib()`](https://github.com/GeoPressure/GeoMagR/commit/f8314787b42a262a352f189d4554a5a1aad7aaf9).
+- [Make the activity clustering of `tag_static(use_activity = TRUE)` deterministic](https://github.com/GeoPressure/GeoMagR/commit/03fc784e5ad5b56e01640785b7bf506b8a99c5a5): `stats::kmeans()` now starts from the range of the activity instead of random centres, so it no longer advances the global random seed. Same split on `14DM`.
+- [Record `wmm_version = NA` for a `ref_map` without provenance](https://github.com/GeoPressure/GeoMagR/commit/3d5eaba0496c4c1cba94b0245b0e7dede4057adc) in `tag$param$geomag_map$ref_map` (e.g. after `terra::wrap()`), instead of the installed `wmm` version.
+
 # GeoMagR 0.3.0
 
 ## Calibration
