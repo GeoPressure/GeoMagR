@@ -77,3 +77,14 @@ test_that("geomag_calib is silent with quiet = TRUE", {
     expect_silent(geomag_calib(tag, calib_data = tag$magnetic, quiet = TRUE))
   })
 })
+
+test_that("geomag_calib alerts on an unanchored intensity with calib_data", {
+  withr::with_dir(system.file("extdata", package = "GeoMagR"), {
+    tag <- GeoPressureR::tag_create("14DM", quiet = TRUE)
+    tag$magnetic$stap_id <- NULL
+    expect_message(
+      geomag_calib(tag, calib_data = tag$magnetic),
+      "not anchored"
+    )
+  })
+})

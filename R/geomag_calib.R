@@ -322,11 +322,7 @@ geomag_calib <- function(
     method = calib_method,
     stap = tag$stap
   )
-  if (
-    !quiet &&
-      isFALSE(calib_data) &&
-      attr(mag, "geomag_calib")$optim$n_known == 0
-  ) {
+  if (!quiet && attr(mag, "geomag_calib")$optim$n_known == 0) {
     cli::cli_alert_warning(
       "No stationary period with known location: the intensity is not anchored to the WMM and can be biased."
     )
