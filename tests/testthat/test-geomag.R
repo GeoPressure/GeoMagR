@@ -135,3 +135,17 @@ test_that("tag_static with activity is reproducible and keeps the RNG", {
   expect_identical(.Random.seed, seed)
   expect_identical(tag_static(tag, use_activity = TRUE), a)
 })
+
+test_that("geomag_map records unknown provenance of a ref_map without attribute", {
+  withr::local_dir(system.file("extdata", package = "GeoMagR"))
+
+  tag <- tag_create("14DM", quiet = TRUE) |>
+    tag_label(quiet = TRUE) |>
+    tag_set_map(extent = c(-18, 23, 0, 50), scale = 1) |>
+    geomag_calib(quiet = TRUE)
+  ref_map <- geomag_map_ref(tag, quiet = TRUE)
+  attr(ref_map, "geomag_ref") <- NULL
+  out <- geomag_map(tag, ref_map = ref_map, quiet = TRUE)
+
+  expect_identical(out$param$geomag_map$ref_map$wmm_version, NA_character_)
+})
