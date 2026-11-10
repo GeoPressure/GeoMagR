@@ -148,7 +148,7 @@ Give at least one stationary period with a known location (e.g. the equipment si
 \itemize{
 \item \code{n_obs}, \code{n_group}, \code{n_known}: samples, groups and groups of known location in the fit.
 \item \code{rmse_F}: RMS of \eqn{r_i^F}{rF_i} (relative to 0.45 G).
-\item \code{rmse_I}: RMS of \eqn{r_i^I}{rI_i}, in approximate degrees.
+\item \code{rmse_I}: RMS of the inclination residual \eqn{I_i - I_{g_i}}{I_i - I_g_i}, in degrees.
 \item \code{fit_rmse}: RMS of \eqn{F_i / F_{g_i} - 1}.
 \item \code{convergence}, \code{value}: \code{\link[stats:optim]{stats::optim()}} convergence code (0 = converged) and final
 \eqn{J}.
