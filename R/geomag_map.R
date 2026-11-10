@@ -148,7 +148,7 @@ geomag_map <- function(
   map_mag_i <- vector("list", nrow(tag$stap))
 
   for (istap in seq_len(nrow(tag$stap))) {
-    mag_i <- mag[istap == mag$stap_id, ]
+    mag_i <- mag[which(mag$stap_id == istap), ]
     map_mag_f[[istap]] <- likelihood(
       mag_i$F[mag_i$clean_F],
       ref_intensity,
