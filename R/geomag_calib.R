@@ -231,7 +231,9 @@ geomag_calib <- function(
     mag_calib <- tag_calib$magnetic
   } else if (is.data.frame(calib_data)) {
     mag_calib <- calib_data
-    cli::cli_alert_info("Using provided data.frame {.arg calib_data}")
+    if (!quiet) {
+      cli::cli_alert_info("Using provided data.frame {.arg calib_data}")
+    }
   } else {
     mag_calib <- mag[,
       intersect(
@@ -247,7 +249,9 @@ geomag_calib <- function(
         names(mag)
       )
     ]
-    cli::cli_alert_info("Using raw magnetic data for calibration data")
+    if (!quiet) {
+      cli::cli_alert_info("Using raw magnetic data for calibration data")
+    }
   }
   # Static samples only (acceleration = gravity) with a stationary period when available
   if ("is_static" %in% names(mag_calib)) {
