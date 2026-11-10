@@ -33,13 +33,13 @@ plot_mag_acceleration <- function(
       title = "Raw Acceleration (sensor frame)",
       x = "X (forward)",
       y = "Y (right)",
-      z = "Z (down)"
+      z = "Z (up)"
     ),
     acceleration_p = list(
       title = "Projected Acceleration (Horizontal plane of Earth)",
       x = "X_p (forward)",
       y = "Y_p (right)",
-      z = "Z_p (down)"
+      z = "Z_p (up)"
     )
   )
   if (variant == "acceleration_p" && !all(cols_acc %in% names(tag$magnetic))) {

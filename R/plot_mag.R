@@ -18,7 +18,7 @@ utils::globalVariables(c(".data"))
 #'   \item \strong{"magnetic_calib"}: Calibration points and fitted ellipsoids for selected periods.
 #'   \item \strong{"calib"}: Alias of \code{"magnetic_calib"} (kept for backward compatibility).
 #'   \item \strong{"acceleration"}: Raw acceleration, colored by static/moving classification.
-#'   \item \strong{"acceleration_p"}: Projected acceleration (NED frame), with reference gravity.
+#'   \item \strong{"acceleration_p"}: Projected acceleration (level frame, z up), with reference gravity.
 #'   \item \strong{"timeseries"}: Time series of inclination and intensity, with optional reference
 #'    path overlay.
 #'   \item \strong{"histogram"}: Histograms of the observation error (sample minus its

@@ -117,11 +117,11 @@
 #'   - `magnetic_x`, `magnetic_y`, `magnetic_z`: Raw magnetic data
 #'   - `is_static`: Logical static-sample classification
 #'   - `pitch`, `roll`: Orientation angles (radian)
-#'   - `acceleration_xp`, `acceleration_yp`, `acceleration_zp`: Projected acceleration in NED
-#'     frame
+#'   - `acceleration_xp`, `acceleration_yp`, `acceleration_zp`: Acceleration projected in the
+#'     level frame of the bird (x and y horizontal, z vertical and pointing up: about +1 g at rest)
 #'   - `magnetic_xc`, `magnetic_yc`, `magnetic_zc`: Calibrated magnetic data
-#'   - `magnetic_xcp`, `magnetic_ycp`, `magnetic_zcp`: Calibrated magnetic data projected in NED
-#'   frame
+#'   - `magnetic_xcp`, `magnetic_ycp`, `magnetic_zcp`: Calibrated magnetic data projected in the
+#'     same level frame (z up: `magnetic_zcp` is negative where the inclination is positive)
 #'   - `H`: Magnetic heading / yaw (degrees). Computed from the calibrated magnetic axes after
 #'     tilt compensation. 0 = North, 90 = East, 180 = South, 270 = West. Range [0, 360).
 #'   - `F`: Magnetic field intensity (Gauss)
