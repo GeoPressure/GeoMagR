@@ -211,13 +211,10 @@ geomag_map <- function(
   tag$param$geomag_map$sd_m_f <- sd_m_f
   tag$param$geomag_map$sd_m_i <- sd_m_i
   tag$param$geomag_map$compute_known <- compute_known
+  # A user-supplied map without the attribute has unknown provenance
   ref_param <- attr(ref_map, "geomag_ref")
   if (is.null(ref_param)) {
-    ref_param <- list(
-      time = NA,
-      height = NA_real_,
-      wmm_version = as.character(utils::packageVersion("wmm"))
-    )
+    ref_param <- list(time = NA, height = NA_real_, wmm_version = NA_character_)
   }
   tag$param$geomag_map$ref_map <- ref_param
   tag
