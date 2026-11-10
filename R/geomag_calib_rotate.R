@@ -19,33 +19,6 @@
 #'
 #' @noRd
 geomag_calib_rotate <- function(a, roll, pitch, yaw = 0) {
-  # Validate dimensions and angle inputs.
-  if (is.null(roll) || length(roll) == 0) {
-    cli::cli_abort("{.arg roll} cannot be {.val NULL} or empty")
-  }
-  if (is.null(pitch) || length(pitch) == 0) {
-    cli::cli_abort("{.arg pitch} cannot be {.val NULL} or empty")
-  }
-  if (is.null(yaw) || length(yaw) == 0) {
-    cli::cli_abort("{.arg yaw} cannot be {.val NULL} or empty")
-  }
-  assertthat::assert_that(assertthat::are_equal(dim(a)[2], 3))
-
-  # Recycle scalar angles to row-wise vectors.
-  if (length(roll) == 1) {
-    roll <- rep(roll, nrow(a))
-  }
-  if (length(pitch) == 1) {
-    pitch <- rep(pitch, nrow(a))
-  }
-  if (length(yaw) == 1) {
-    yaw <- rep(yaw, nrow(a))
-  }
-
-  assertthat::assert_that(assertthat::are_equal(nrow(a), length(roll)))
-  assertthat::assert_that(assertthat::are_equal(nrow(a), length(pitch)))
-  assertthat::assert_that(assertthat::are_equal(nrow(a), length(yaw)))
-
   # Vectorised rot(roll, pitch, yaw) %*% a[i, ] = Rz %*% Ry %*% Rx %*% a[i, ]
   cr <- cos(roll)
   sr <- sin(roll)
