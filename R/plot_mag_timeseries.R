@@ -181,7 +181,7 @@ plot_mag_timeseries <- function(tag, cols, stap_id, path) {
         ax <- p_plotly$x$data[[i]]$yaxis
         # Facets are sorted alphabetically: F on top (y), I below (y2).
         panel <- if (identical(ax, "y2")) "I" else "F"
-        nm <- paste0("Outlier (", panel, ")")
+        nm <- glue::glue("Outlier ({panel})")
       }
       p_plotly$x$data[[i]]$name <- nm
       p_plotly$x$data[[i]]$legendgroup <- nm

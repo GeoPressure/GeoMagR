@@ -42,7 +42,7 @@ plot_mag_magnetic <- function(
     corr_proj = "Magnetic corrected and projected"
   )
   if (mag_origin == "calib") {
-    title <- paste0("Calibration - ", title)
+    title <- glue::glue("Calibration - {title}")
   }
 
   p <- plotly::plot_ly() |>
