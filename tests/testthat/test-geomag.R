@@ -91,3 +91,19 @@ test_that("geomag workflow records parameters and requires contiguous stap_id", 
     "consecutive integers"
   )
 })
+
+test_that("geomag_map ignores samples with NA stap_id", {
+  withr::local_dir(system.file("extdata", package = "GeoMagR"))
+
+  tag <- tag_create("14DM", quiet = TRUE) |>
+    tag_label(quiet = TRUE) |>
+    tag_set_map(extent = c(-18, 23, 0, 50), scale = 2) |>
+    geomag_calib(quiet = TRUE)
+  ref_map <- geomag_map_ref(tag, quiet = TRUE)
+  out <- geomag_map(tag, ref_map = ref_map, quiet = TRUE)
+  tag$magnetic$stap_id[1:5] <- NA
+  out_na <- geomag_map(tag, ref_map = ref_map, quiet = TRUE)
+
+  expect_true(all(is.finite(unlist(out_na$map_magnetic$data))))
+  expect_equal(out_na$map_magnetic$data[-1], out$map_magnetic$data[-1])
+})
