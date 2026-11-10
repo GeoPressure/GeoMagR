@@ -52,11 +52,11 @@ Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contain
 \item \code{magnetic_x}, \code{magnetic_y}, \code{magnetic_z}: Raw magnetic data
 \item \code{is_static}: Logical static-sample classification
 \item \code{pitch}, \code{roll}: Orientation angles (radian)
-\item \code{acceleration_xp}, \code{acceleration_yp}, \code{acceleration_zp}: Projected acceleration in NED
-frame
+\item \code{acceleration_xp}, \code{acceleration_yp}, \code{acceleration_zp}: Acceleration projected in the
+level frame of the bird (x and y horizontal, z vertical and pointing up: about +1 g at rest)
 \item \code{magnetic_xc}, \code{magnetic_yc}, \code{magnetic_zc}: Calibrated magnetic data
-\item \code{magnetic_xcp}, \code{magnetic_ycp}, \code{magnetic_zcp}: Calibrated magnetic data projected in NED
-frame
+\item \code{magnetic_xcp}, \code{magnetic_ycp}, \code{magnetic_zcp}: Calibrated magnetic data projected in the
+same level frame (z up: \code{magnetic_zcp} is negative where the inclination is positive)
 \item \code{H}: Magnetic heading / yaw (degrees). Computed from the calibrated magnetic axes after
 tilt compensation. 0 = North, 90 = East, 180 = South, 270 = West. Range [0, 360).
 \item \code{F}: Magnetic field intensity (Gauss)
