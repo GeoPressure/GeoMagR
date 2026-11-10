@@ -86,9 +86,7 @@ plot_mag <- function(
 ) {
   color_by <- match.arg(color_by)
   if (color_by == "auto") {
-    color_by <- if (
-      "stap_id" %in% names(tag$magnetic) && !all(is.na(tag$magnetic$stap_id))
-    ) {
+    color_by <- if ("stap_id" %in% names(tag$magnetic) && !all(is.na(tag$magnetic$stap_id))) {
       "stap_id"
     } else {
       "date"
