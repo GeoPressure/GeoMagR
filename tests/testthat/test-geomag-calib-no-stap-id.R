@@ -43,3 +43,28 @@ test_that("geomag_calib maps retired methods with a warning", {
     expect_equal(out$param$geomag_calib$calib_method, "ellipse")
   })
 })
+
+test_that("geomag_calib reports rmse_I as the inclination angle residual", {
+  geomag_calib_to_calibrated <- getFromNamespace(
+    "geomag_calib_to_calibrated",
+    "GeoMagR"
+  )
+  withr::with_dir(system.file("extdata", package = "GeoMagR"), {
+    tag <- GeoPressureR::tag_create("14DM", quiet = TRUE)
+    tag$magnetic$stap_id <- NULL
+    out <- geomag_calib(tag, quiet = TRUE)
+  })
+  p <- out$param$geomag_calib
+  mc <- out$mag_calib
+  M <- geomag_calib_to_calibrated(
+    mc[, c("magnetic_x", "magnetic_y", "magnetic_z")],
+    p$offset,
+    p$rotM,
+    p$radius_shape
+  )
+  A <- as.matrix(mc[, c("acceleration_x", "acceleration_y", "acceleration_z")])
+  sI <- -rowSums(M * A) / sqrt(rowSums(M^2)) / sqrt(rowSums(A^2))
+  # Groups are days without stap_id; their inclination is the mean sin(I)
+  dI <- asin(sI) - asin(stats::ave(sI, as.Date(mc$date)))
+  expect_equal(p$optim$rmse_I, sqrt(mean(dI^2)) * 180 / pi, tolerance = 1e-6)
+})

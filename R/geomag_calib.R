@@ -79,7 +79,7 @@
 #' (\eqn{F_g}, indexed by `stap_id`) and `optim`, a list with:
 #' - `n_obs`, `n_group`, `n_known`: samples, groups and groups of known location in the fit.
 #' - `rmse_F`: RMS of \eqn{r_i^F}{rF_i} (relative to 0.45 G).
-#' - `rmse_I`: RMS of \eqn{r_i^I}{rI_i}, in approximate degrees.
+#' - `rmse_I`: RMS of the inclination residual \eqn{I_i - I_{g_i}}{I_i - I_g_i}, in degrees.
 #' - `fit_rmse`: RMS of \eqn{F_i / F_{g_i} - 1}.
 #' - `convergence`, `value`: [stats::optim()] convergence code (0 = converged) and final
 #'   \eqn{J}.
