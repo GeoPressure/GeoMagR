@@ -46,10 +46,10 @@ samples. Passed to \code{\link[=tag_static]{tag_static()}}.}
 norm (\code{sqrt(x^2 + y^2 + z^2)}) and its median, used when \code{rm_outlier = TRUE}.}
 
 \item{flight_window}{Numeric. Time (hours) after the end and before the start of a
-stationary period within which flight samples join its group in the calibration fit (see
-\strong{Workflow and argument use}). The field changes little within about 1 h of the stop, while
-farther samples of a long flight would bias the field of the group. \code{0} adds no flight
-samples.}
+stationary period within which in-flight samples, static or not, join its group in the
+calibration fit (see \strong{Workflow and argument use}). The field changes little within about
+1 h of the stop, while farther samples of a long flight would bias the field of the group.
+\code{0} uses no in-flight samples.}
 }
 \value{
 Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contains:
@@ -84,15 +84,17 @@ magnetic data using \code{static_thr_hard} and \code{static_thr_outlier}. Only s
 samples are used for the calibration fit, because their acceleration is the
 gravity direction.
 \item \strong{Select calibration data.} \code{calib_data} selects a dedicated calibration
-dataset, a supplied data frame, or the field data in \code{tag$magnetic}. With field
-data and \code{stap_id}, flights with at least 12 samples (e.g. 1 h at 5 min) add
-their samples within \code{flight_window} hours of a stationary period, with the
-flight-mean acceleration as gravity direction: birds that rest in a single
-orientation (e.g. owls) only rotate in flight. Samples within \code{flight_window}
-hours after the end of the previous stationary period join its group, those
-within \code{flight_window} hours before the start of the next one join that group,
-and the other flight samples are not used, as the field changes along the
-flight. Static samples are then thinned to three times the flight samples.
+dataset, a supplied data frame, or the field data in \code{tag$magnetic}. An
+in-flight sample (non-integer \code{stap_id}) joins the group of the previous
+stationary period if it is within \code{flight_window} hours after its end, the
+group of the next one if within \code{flight_window} hours before its start (the
+nearer one if both), and is otherwise not used, as the field changes along the
+flight. This applies to static samples taken during a flight (e.g. a brief
+rest) and, with field data, to the samples of flights with at least 12 samples
+(e.g. 1 h at 5 min), which are added with the flight-mean acceleration as
+gravity direction: birds that rest in a single orientation (e.g. owls) only
+rotate in flight. Static samples are then thinned to three times these flight
+samples.
 \item \strong{Filter calibration samples.} When \code{rm_outlier = TRUE}, samples whose raw
 magnetic norm differs from the median raw norm by more than \code{calib_thr_extreme}
 are removed (spikes). Rows with incomplete magnetic axes are removed regardless

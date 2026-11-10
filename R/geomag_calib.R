@@ -12,15 +12,17 @@
 #'    samples are used for the calibration fit, because their acceleration is the
 #'    gravity direction.
 #' 2. **Select calibration data.** `calib_data` selects a dedicated calibration
-#'    dataset, a supplied data frame, or the field data in `tag$magnetic`. With field
-#'    data and `stap_id`, flights with at least 12 samples (e.g. 1 h at 5 min) add
-#'    their samples within `flight_window` hours of a stationary period, with the
-#'    flight-mean acceleration as gravity direction: birds that rest in a single
-#'    orientation (e.g. owls) only rotate in flight. Samples within `flight_window`
-#'    hours after the end of the previous stationary period join its group, those
-#'    within `flight_window` hours before the start of the next one join that group,
-#'    and the other flight samples are not used, as the field changes along the
-#'    flight. Static samples are then thinned to three times the flight samples.
+#'    dataset, a supplied data frame, or the field data in `tag$magnetic`. An
+#'    in-flight sample (non-integer `stap_id`) joins the group of the previous
+#'    stationary period if it is within `flight_window` hours after its end, the
+#'    group of the next one if within `flight_window` hours before its start (the
+#'    nearer one if both), and is otherwise not used, as the field changes along the
+#'    flight. This applies to static samples taken during a flight (e.g. a brief
+#'    rest) and, with field data, to the samples of flights with at least 12 samples
+#'    (e.g. 1 h at 5 min), which are added with the flight-mean acceleration as
+#'    gravity direction: birds that rest in a single orientation (e.g. owls) only
+#'    rotate in flight. Static samples are then thinned to three times these flight
+#'    samples.
 #' 3. **Filter calibration samples.** When `rm_outlier = TRUE`, samples whose raw
 #'    magnetic norm differs from the median raw norm by more than `calib_thr_extreme`
 #'    are removed (spikes). Rows with incomplete magnetic axes are removed regardless
@@ -115,10 +117,10 @@
 #' @param calib_thr_extreme Numeric. Maximum absolute difference (G) between the raw magnetic
 #'   norm (`sqrt(x^2 + y^2 + z^2)`) and its median, used when `rm_outlier = TRUE`.
 #' @param flight_window Numeric. Time (hours) after the end and before the start of a
-#'   stationary period within which flight samples join its group in the calibration fit (see
-#'   **Workflow and argument use**). The field changes little within about 1 h of the stop, while
-#'   farther samples of a long flight would bias the field of the group. `0` adds no flight
-#'   samples.
+#'   stationary period within which in-flight samples, static or not, join its group in the
+#'   calibration fit (see **Workflow and argument use**). The field changes little within about
+#'   1 h of the stop, while farther samples of a long flight would bias the field of the group.
+#'   `0` uses no in-flight samples.
 #'
 #' @return Modified `GeoPressureR` tag object. The `$magnetic` data frame contains:
 #'   - `date`: Timestamp (POSIXct or numeric)
@@ -267,39 +269,46 @@ geomag_calib <- function(
   if ("is_static" %in% names(mag_calib)) {
     mag_calib <- mag_calib[mag_calib$is_static %in% TRUE, ]
   }
-  # Without any labelled stationary period, group by day instead
-  if ("stap_id" %in% names(mag_calib)) {
-    mag_calib <- if (all(is.na(mag_calib$stap_id))) {
-      mag_calib[names(mag_calib) != "stap_id"]
-    } else {
-      mag_calib[!is.na(mag_calib$stap_id), ]
-    }
-  }
-  # Add the samples of flights with at least 12 samples, with the flight-mean acceleration (whole
-  # flight) as gravity. Only samples within flight_window hours of the previous or next
-  # stationary period are kept, in the group of the nearer one: the field changes along the
-  # flight. Static samples are thinned to 3x the flight samples.
-  if (isFALSE(calib_data) && length(fl) > 0) {
-    flc <- fl[stats::ave(g, g, FUN = length) >= 12]
-    sp <- mag$stap_id[flc]
-    dt_prev <- difftime(
-      mag$date[flc],
-      tag$stap$end[match(floor(sp), tag$stap$stap_id)],
-      units = "hours"
-    ) |>
+  # Stationary period of an in-flight sample: the previous one if within flight_window hours
+  # after its end, the next one if within flight_window hours before its start (the nearer if
+  # both), NA otherwise, as the field changes along the flight
+  near_stap <- \(sp, date) {
+    dt_prev <- difftime(date, tag$stap$end[match(floor(sp), tag$stap$stap_id)], units = "hours") |>
       as.numeric()
     dt_next <- difftime(
       tag$stap$start[match(ceiling(sp), tag$stap$stap_id)],
-      mag$date[flc],
+      date,
       units = "hours"
     ) |>
       as.numeric()
-    near <- pmin(dt_prev, dt_next) < flight_window
-    flc <- flc[near]
+    ifelse(
+      pmin(dt_prev, dt_next) < flight_window,
+      ifelse(dt_prev <= dt_next, floor(sp), ceiling(sp)),
+      NA
+    )
+  }
+  # Without any labelled stationary period, group by day instead. In-flight static samples
+  # join a nearby stationary period or are dropped.
+  if ("stap_id" %in% names(mag_calib)) {
+    if (all(is.na(mag_calib$stap_id))) {
+      mag_calib <- mag_calib[names(mag_calib) != "stap_id"]
+    } else {
+      i <- which(mag_calib$stap_id %% 1 != 0)
+      mag_calib$stap_id[i] <- near_stap(mag_calib$stap_id[i], mag_calib$date[i])
+      mag_calib <- mag_calib[!is.na(mag_calib$stap_id), ]
+    }
+  }
+  # Add the samples of flights with at least 12 samples near a stationary period, with the
+  # flight-mean acceleration (whole flight) as gravity. Static samples are thinned to 3x the
+  # flight samples.
+  if (isFALSE(calib_data) && length(fl) > 0) {
+    flc <- fl[stats::ave(g, g, FUN = length) >= 12]
+    sp <- near_stap(mag$stap_id[flc], mag$date[flc])
+    flc <- flc[!is.na(sp)]
     if (length(flc) > 0) {
       mf <- mag[flc, names(mag_calib)]
       mf[, acc_cols] <- acc[flc, ]
-      mf$stap_id <- ifelse(dt_prev <= dt_next, floor(sp), ceiling(sp))[near]
+      mf$stap_id <- sp[!is.na(sp)]
       mf$is_static <- TRUE
       k <- unique(round(seq(
         1,
