@@ -8,7 +8,7 @@ message: 'To cite package "GeoMagR" in publications use:'
 type: software
 license: GPL-3.0-or-later
 title: 'GeoMagR: Geolocation by Magnetic Field'
-version: 0.3.0
+version: 0.3.1
 doi: 10.1111/2041-210x.70355
 abstract: Provides methods to produce likelihood maps of position based on magnetic
   field data, including calibration, outlier removal, and interactive 3D visualization.
@@ -67,7 +67,7 @@ references:
     email: rafnuss@gmail.com
   year: '2025'
   url: https://github.com/GeoPressure/GeoMagR
-  doi: 10.5281/zenodo.19217183
+  doi: 10.5281/zenodo.19217142
 - type: software
   title: 'R: A Language and Environment for Statistical Computing'
   notes: Depends
@@ -172,8 +172,8 @@ references:
     given-names: Mathieu
     email: mathieu@mgravey.com
     orcid: https://orcid.org/0000-0002-0871-1507
-  version: '>= 3.8.0'
   year: '2026'
+  version: '>= 3.8.0'
 - type: software
   title: plotly
   abstract: 'plotly: Create Interactive Web Graphics via ''plotly.js'''
