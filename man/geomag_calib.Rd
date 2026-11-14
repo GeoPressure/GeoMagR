@@ -52,11 +52,11 @@ Modified \code{GeoPressureR} tag object. The \verb{$magnetic} data frame contain
 \item \code{magnetic_x}, \code{magnetic_y}, \code{magnetic_z}: Raw magnetic data
 \item \code{is_static}: Logical static-sample classification
 \item \code{pitch}, \code{roll}: Orientation angles (radian)
-\item \code{acceleration_xp}, \code{acceleration_yp}, \code{acceleration_zp}: Projected acceleration in NED
-frame
+\item \code{acceleration_xp}, \code{acceleration_yp}, \code{acceleration_zp}: Acceleration projected in the
+level frame of the bird (x and y horizontal, z vertical and pointing up: about +1 g at rest)
 \item \code{magnetic_xc}, \code{magnetic_yc}, \code{magnetic_zc}: Calibrated magnetic data
-\item \code{magnetic_xcp}, \code{magnetic_ycp}, \code{magnetic_zcp}: Calibrated magnetic data projected in NED
-frame
+\item \code{magnetic_xcp}, \code{magnetic_ycp}, \code{magnetic_zcp}: Calibrated magnetic data projected in the
+same level frame (z up: \code{magnetic_zcp} is negative where the inclination is positive)
 \item \code{H}: Magnetic heading / yaw (degrees). Computed from the calibrated magnetic axes after
 tilt compensation. 0 = North, 90 = East, 180 = South, 270 = West. Range [0, 360).
 \item \code{F}: Magnetic field intensity (Gauss)
@@ -148,7 +148,7 @@ Give at least one stationary period with a known location (e.g. the equipment si
 \itemize{
 \item \code{n_obs}, \code{n_group}, \code{n_known}: samples, groups and groups of known location in the fit.
 \item \code{rmse_F}: RMS of \eqn{r_i^F}{rF_i} (relative to 0.45 G).
-\item \code{rmse_I}: RMS of \eqn{r_i^I}{rI_i}, in approximate degrees.
+\item \code{rmse_I}: RMS of the inclination residual \eqn{I_i - I_{g_i}}{I_i - I_g_i}, in degrees.
 \item \code{fit_rmse}: RMS of \eqn{F_i / F_{g_i} - 1}.
 \item \code{convergence}, \code{value}: \code{\link[stats:optim]{stats::optim()}} convergence code (0 = converged) and final
 \eqn{J}.

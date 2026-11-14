@@ -95,7 +95,7 @@ geomag_calib_fit <- function(
     sg <- ifelse(is.na(ki), rowsum(sI, G)[, 1] / nG, ki)
     # Absolute intensity residual (scaled by a typical 0.45 G): a relative one shrinks as the
     # sphere grows, which favours a large offset when the bird adopts only a few orientations.
-    list(rF = (Fn - Fg[G]) / 0.45, rI = sI - sg[G], Fg = Fg)
+    list(rF = (Fn - Fg[G]) / 0.45, rI = sI - sg[G], Fg = Fg, sI = sI)
   }
   fn <- function(p) {
     s <- fit_stats(p)
@@ -173,7 +173,8 @@ geomag_calib_fit <- function(
       n_group = length(ug),
       n_known = sum(!is.na(kf)),
       rmse_F = sqrt(mean(s$rF^2)),
-      rmse_I = sqrt(mean(s$rI^2)) * 180 / pi, # sin(I) residual, approx. degrees
+      # Angle residual: d sin(I) = cos(I) dI, so the sin(I) residual understates it
+      rmse_I = sqrt(mean((asin(s$sI) - asin(s$sI - s$rI))^2)) * 180 / pi,
       convergence = result$convergence,
       value = result$value
     )
@@ -202,23 +203,14 @@ geomag_calib_to_calibrated <- function(
   rotate_back = TRUE
 ) {
   xyz <- as.matrix(xyz)
-  stopifnot(ncol(xyz) == 3)
 
   xyz <- sweep(xyz, 2, offset, "-")
   xyz <- xyz %*% rotM
   xyz <- sweep(xyz, 2, radius_shape, "/")
 
+  # Scalar or one amplitude per row (recycled down the columns)
   if (!is.null(radius_amplitude)) {
-    if (length(radius_amplitude) == 1L) {
-      xyz <- xyz / radius_amplitude
-    } else {
-      xyz <- xyz /
-        matrix(
-          rep(radius_amplitude, each = ncol(xyz)),
-          ncol = ncol(xyz),
-          byrow = TRUE
-        )
-    }
+    xyz <- xyz / radius_amplitude
   }
 
   if (rotate_back) {

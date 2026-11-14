@@ -91,3 +91,61 @@ test_that("geomag workflow records parameters and requires contiguous stap_id", 
     "consecutive integers"
   )
 })
+
+test_that("geomag_map ignores samples with NA stap_id", {
+  withr::local_dir(system.file("extdata", package = "GeoMagR"))
+
+  tag <- tag_create("14DM", quiet = TRUE) |>
+    tag_label(quiet = TRUE) |>
+    tag_set_map(extent = c(-18, 23, 0, 50), scale = 2) |>
+    geomag_calib(quiet = TRUE)
+  ref_map <- geomag_map_ref(tag, quiet = TRUE)
+  out <- geomag_map(tag, ref_map = ref_map, quiet = TRUE)
+  tag$magnetic$stap_id[1:5] <- NA
+  out_na <- geomag_map(tag, ref_map = ref_map, quiet = TRUE)
+
+  expect_true(all(is.finite(unlist(out_na$map_magnetic$data))))
+  expect_equal(out_na$map_magnetic$data[-1], out$map_magnetic$data[-1])
+})
+
+test_that("geomag_calib averages flight acceleration over non-missing values", {
+  withr::with_dir(system.file("extdata", package = "GeoMagR"), {
+    tag <- GeoPressureR::tag_create("14DM", quiet = TRUE) |>
+      GeoPressureR::tag_label(quiet = TRUE)
+  })
+  fl <- which(floor(tag$magnetic$stap_id) == 2 & tag$magnetic$stap_id %% 1 != 0)
+  tag$magnetic$acceleration_x[fl[1]] <- NA
+  out <- geomag_calib(tag, quiet = TRUE)
+  acc <- colMeans(
+    tag$magnetic[fl, c("acceleration_x", "acceleration_y", "acceleration_z")],
+    na.rm = TRUE
+  )
+  expect_equal(
+    out$magnetic$pitch[fl],
+    rep(asin(-acc[[1]] / sqrt(sum(acc^2))), length(fl))
+  )
+})
+
+test_that("tag_static with activity is reproducible and keeps the RNG", {
+  withr::local_dir(system.file("extdata", package = "GeoMagR"))
+  tag <- tag_create("14DM", quiet = TRUE)
+  set.seed(1)
+  seed <- .Random.seed
+  a <- tag_static(tag, use_activity = TRUE)
+  expect_identical(.Random.seed, seed)
+  expect_identical(tag_static(tag, use_activity = TRUE), a)
+})
+
+test_that("geomag_map records unknown provenance of a ref_map without attribute", {
+  withr::local_dir(system.file("extdata", package = "GeoMagR"))
+
+  tag <- tag_create("14DM", quiet = TRUE) |>
+    tag_label(quiet = TRUE) |>
+    tag_set_map(extent = c(-18, 23, 0, 50), scale = 1) |>
+    geomag_calib(quiet = TRUE)
+  ref_map <- geomag_map_ref(tag, quiet = TRUE)
+  attr(ref_map, "geomag_ref") <- NULL
+  out <- geomag_map(tag, ref_map = ref_map, quiet = TRUE)
+
+  expect_identical(out$param$geomag_map$ref_map$wmm_version, NA_character_)
+})

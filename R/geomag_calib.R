@@ -79,7 +79,7 @@
 #' (\eqn{F_g}, indexed by `stap_id`) and `optim`, a list with:
 #' - `n_obs`, `n_group`, `n_known`: samples, groups and groups of known location in the fit.
 #' - `rmse_F`: RMS of \eqn{r_i^F}{rF_i} (relative to 0.45 G).
-#' - `rmse_I`: RMS of \eqn{r_i^I}{rI_i}, in approximate degrees.
+#' - `rmse_I`: RMS of the inclination residual \eqn{I_i - I_{g_i}}{I_i - I_g_i}, in degrees.
 #' - `fit_rmse`: RMS of \eqn{F_i / F_{g_i} - 1}.
 #' - `convergence`, `value`: [stats::optim()] convergence code (0 = converged) and final
 #'   \eqn{J}.
@@ -117,11 +117,11 @@
 #'   - `magnetic_x`, `magnetic_y`, `magnetic_z`: Raw magnetic data
 #'   - `is_static`: Logical static-sample classification
 #'   - `pitch`, `roll`: Orientation angles (radian)
-#'   - `acceleration_xp`, `acceleration_yp`, `acceleration_zp`: Projected acceleration in NED
-#'     frame
+#'   - `acceleration_xp`, `acceleration_yp`, `acceleration_zp`: Acceleration projected in the
+#'     level frame of the bird (x and y horizontal, z vertical and pointing up: about +1 g at rest)
 #'   - `magnetic_xc`, `magnetic_yc`, `magnetic_zc`: Calibrated magnetic data
-#'   - `magnetic_xcp`, `magnetic_ycp`, `magnetic_zcp`: Calibrated magnetic data projected in NED
-#'   frame
+#'   - `magnetic_xcp`, `magnetic_ycp`, `magnetic_zcp`: Calibrated magnetic data projected in the
+#'     same level frame (z up: `magnetic_zcp` is negative where the inclination is positive)
 #'   - `H`: Magnetic heading / yaw (degrees). Computed from the calibrated magnetic axes after
 #'     tilt compensation. 0 = North, 90 = East, 180 = South, 270 = West. Range [0, 360).
 #'   - `F`: Magnetic field intensity (Gauss)
@@ -187,7 +187,7 @@ geomag_calib <- function(
   if (length(fl) > 0) {
     g <- floor(mag$stap_id[fl])
     acc_m <- rowsum(acc[fl, , drop = FALSE], g, na.rm = TRUE) /
-      as.vector(rowsum(rep(1, length(g)), g))
+      rowsum(1 * !is.na(acc[fl, , drop = FALSE]), g)
     acc[fl, ] <- acc_m[match(g, as.numeric(rownames(acc_m))), ]
   }
 
@@ -231,7 +231,9 @@ geomag_calib <- function(
     mag_calib <- tag_calib$magnetic
   } else if (is.data.frame(calib_data)) {
     mag_calib <- calib_data
-    cli::cli_alert_info("Using provided data.frame {.arg calib_data}")
+    if (!quiet) {
+      cli::cli_alert_info("Using provided data.frame {.arg calib_data}")
+    }
   } else {
     mag_calib <- mag[,
       intersect(
@@ -247,7 +249,9 @@ geomag_calib <- function(
         names(mag)
       )
     ]
-    cli::cli_alert_info("Using raw magnetic data for calibration data")
+    if (!quiet) {
+      cli::cli_alert_info("Using raw magnetic data for calibration data")
+    }
   }
   # Static samples only (acceleration = gravity) with a stationary period when available
   if ("is_static" %in% names(mag_calib)) {
@@ -318,11 +322,7 @@ geomag_calib <- function(
     method = calib_method,
     stap = tag$stap
   )
-  if (
-    !quiet &&
-      isFALSE(calib_data) &&
-      attr(mag, "geomag_calib")$optim$n_known == 0
-  ) {
+  if (!quiet && attr(mag, "geomag_calib")$optim$n_known == 0) {
     cli::cli_alert_warning(
       "No stationary period with known location: the intensity is not anchored to the WMM and can be biased."
     )
@@ -468,7 +468,9 @@ tag_static <- function(
   # The high-activity group is treated as moving before the final outlier cleanup.
   if (use_activity && !is.null(tag$acceleration)) {
     acc <- tag$acceleration
-    km <- stats::kmeans(acc$value[acc$value > 0], centers = 2)
+    # Start from the range instead of random centres: reproducible, and the global RNG is kept
+    v <- acc$value[acc$value > 0]
+    km <- stats::kmeans(v, centers = range(v))
     # Match by date to keep the row order of tag$magnetic (merge() sorts by date).
     is_static[acc$value[match(mag$date, acc$date)] > mean(km$centers)] <- FALSE
   }
