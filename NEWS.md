@@ -1,14 +1,24 @@
 # GeoMagR (development version)
 
 - [Use only the in-flight samples within `flight_window` hours of a stationary period in `geomag_calib()`](https://github.com/GeoPressure/GeoMagR/commit/a9fe411ed46ad477f78c6f4691b49ef391b7d1f9) (new argument, default 1 h): flight samples were grouped with the departure site, which biased the field of that stationary period on long flights. The samples after the departure and before the arrival now join the respective stationary period, the others are not used; `flight_window = 0` uses no in-flight samples. [The same rule applies to static samples taken during a flight](https://github.com/GeoPressure/GeoMagR/commit/4af8de579cac67f846c0b1eeaa6bd84e1f38b7fd) (e.g. a brief rest), which joined the nearest stationary period regardless of time. Results change slightly on `14DM`, where one static sample about 5 h from either stop is now excluded.
-- [Describe the projected frame of `geomag_calib()` outputs as z up](https://github.com/GeoPressure/GeoMagR/commit/c61c90bc8f1e8973f94ded2ab3ef333116ab5c86), not NED: `acceleration_zp` is about +1 g at rest and `magnetic_zcp` is negative where the inclination is positive. The acceleration plot labels are fixed too; values are unchanged.
-- [Report `rmse_I` as the inclination angle residual](https://github.com/GeoPressure/GeoMagR/commit/2b094483b924bbdfc940b8f0a1c6f61436f46da3) in `tag$param$geomag_calib$optim`. It was the `sin(I)` residual, which understates the angle error by `cos(I)` (4.1° instead of 5.0° on `14DM`, half the true value at I = 60°). The calibration itself is unchanged.
-- [Ignore samples with `NA` `stap_id` in `geomag_map()`](https://github.com/GeoPressure/GeoMagR/commit/09c24bf3923014e1c104cba0a17e395a5e75e786): they used to turn every likelihood map into `NA`.
-- [Average the flight acceleration over non-missing values in `geomag_calib()`](https://github.com/GeoPressure/GeoMagR/commit/f7d0781affb73d1387c9804f3cc17d57550227c1): a flight with partially missing acceleration axes had a skewed gravity direction. Unchanged on `14DM`.
-- [Alert on an unanchored intensity whatever `calib_data`](https://github.com/GeoPressure/GeoMagR/commit/1ba162c4ddc02ec0fbdcd23f5fe5d808d8b3c5a2) in `geomag_calib()`: a calibration directory or data frame never anchors the intensity to the WMM, but the alert was only shown for field data.
-- [Respect `quiet = TRUE` for the calibration-data messages of `geomag_calib()`](https://github.com/GeoPressure/GeoMagR/commit/f8314787b42a262a352f189d4554a5a1aad7aaf9).
-- [Make the activity clustering of `tag_static(use_activity = TRUE)` deterministic](https://github.com/GeoPressure/GeoMagR/commit/03fc784e5ad5b56e01640785b7bf506b8a99c5a5): `stats::kmeans()` now starts from the range of the activity instead of random centres, so it no longer advances the global random seed. Same split on `14DM`.
-- [Record `wmm_version = NA` for a `ref_map` without provenance](https://github.com/GeoPressure/GeoMagR/commit/3d5eaba0496c4c1cba94b0245b0e7dede4057adc) in `tag$param$geomag_map$ref_map` (e.g. after `terra::wrap()`), instead of the installed `wmm` version.
+
+# GeoMagR v0.3.1
+
+## Main
+
+- [Fix missing stationary-period IDs turning magnetic likelihood maps into `NA`](https://github.com/GeoPressure/GeoMagR/commit/7be7a274fbcf26169f9502f4a5812d1d296b4d54).
+- [Compute flight acceleration averages over non-missing measurements](https://github.com/GeoPressure/GeoMagR/commit/7bbbf500af05d4de03eb79972070b754f04c5262). Calibration results change when flight samples have partially missing acceleration axes; results are unchanged on `14DM`.
+
+## Minor
+
+- [Report `rmse_I` as an inclination angle residual](https://github.com/GeoPressure/GeoMagR/commit/01dac5d11d34b6f4606d4524e82c6611c489d3ff). The reported diagnostic changes from the residual of `sin(I)` to degrees; calibration itself is unchanged.
+- [Correct the projected-frame documentation and acceleration plot labels to z up](https://github.com/GeoPressure/GeoMagR/commit/a1f12bbc5f602efd4b4972a6d270c9e119f903ab). Numerical values are unchanged.
+- [Respect `quiet = TRUE` for calibration-data messages](https://github.com/GeoPressure/GeoMagR/commit/0c3adaa908fe888cf5dbb9ce8bd28f50ef8aaa15) and [warn whenever intensity calibration lacks a known-location anchor](https://github.com/GeoPressure/GeoMagR/commit/b2626d176045eaff1eb258ab6f8b1f6f9e96b295).
+- [Make `tag_static(use_activity = TRUE)` deterministic without advancing the random seed](https://github.com/GeoPressure/GeoMagR/commit/9590b6189e1b8c72ec7ae3e48855cd8e4f2305d7).
+- [Record an unknown WMM version for reference maps without provenance](https://github.com/GeoPressure/GeoMagR/commit/945e2e14badd138e541be0349511b4b7aa5dc8e6).
+- [Shorten the getting-started vignette maps, keep one basemap behind the likelihood, and make areas outside the 99% likelihood region transparent](https://github.com/GeoPressure/GeoMagR/commit/407939e8442a9e497b99074f7ed7e79bf5e242cf).
+
+**Full Changelog**: <https://github.com/GeoPressure/GeoMagR/compare/v0.3.0...v0.3.1>
 
 # GeoMagR 0.3.0
 

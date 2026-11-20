@@ -234,10 +234,18 @@ analysis. Increasing either standard deviation broadens the likelihood surface a
 influence of magnetic data. Compare trajectories across plausible lower and upper values, especially
 when calibration quality or logger orientation is uncertain.
 
-The result is a spatial likelihood surface for each stationary period.
+The result is a spatial likelihood surface for each stationary period. We display the 99% likelihood region, leaving the remaining background transparent, over a fixed gray basemap.
 
 ```{r}
-plot(tag, "map_magnetic_intensity")
+map <- plot(
+  tag,
+  "map_magnetic_intensity",
+  thr_likelihood = 0.99,
+  provider = "Esri.WorldGrayCanvas",
+  provider_options = leaflet::providerTileOptions(pane = "tilePane", zIndex = 0)
+)
+map$height <- 450
+map
 ```
 
 
@@ -248,7 +256,15 @@ if (requireNamespace("rnaturalearth", quietly = TRUE)) {
     tag$map_magnetic_inclination
   )
 }
-plot(tag, "map_magnetic_inclination")
+map <- plot(
+  tag,
+  "map_magnetic_inclination",
+  thr_likelihood = 0.99,
+  provider = "Esri.WorldGrayCanvas",
+  provider_options = leaflet::providerTileOptions(pane = "tilePane", zIndex = 0)
+)
+map$height <- 450
+map
 ```
 
 ## 6. What this workflow gives you
